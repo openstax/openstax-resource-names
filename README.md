@@ -23,7 +23,15 @@ eg:
 
 each resource type can use whatever identifier format is most useful. the ID should provide enough information to be able to locate the resource given the understanding of the ID format. It won't be expected that the knowledge of how to interpret these IRI will need to be reproduced in all the places that they are used, we may provide tools such as shared libraries, or a small microservice, to help interpret them in a centralized way.
 
-for instance identifying a learning objective with only a uuid or element id doesn't help you locate its definition, you need to know where in the content to find it, so we can create a better identifier by concatenating the source content with the learning objective id.
+for example identifying a learning objective with only a uuid or element id doesn't help you locate its definition, you need to know where in the content to find it, so we can create a better identifier by concatenating the source content with the learning objective id. eg:
+> https://openstax.org/orn/content:learning-objective/{book_uuid}:{page_uuid}:{element_id}
+
+# Versioning Resources
+
+It would be fine for a resource type to include a version identifier on its id, for instance in our content it might look normal do do something like:
+> https://openstax.org/orn/content:book/031da8d3-b525-429c-80cf-6c8ed997733a@asdfb
+
+But be careful before doing this by default, depending on usage it may be more correct to use the ORN to indicate the resource _in general_ and not a single version in particular. For instance a typical usage of an ORN would be to indicate that a particular video is about or supports a certain part of the textbook content, the video would hold an ORN to the content, and then you can filter videos by content. In this case you don't want to have to update the video every time a new version of the content is published.
 
 # Purpose
 Openstax has a variety of content and activity types using different technologies and different formats. These resources are usually about other resources. This can be in a direct way, like exercises that assess the knowledge learned by reading a certain section of content or watching a certain video or performing a certain activity, or in a dependent way, like topics that build on knowledge from other topics. In any case, we have a need to be able to create a graph of our various content resources and that starts with being able to universally identify, recognize, and locate those resources.
