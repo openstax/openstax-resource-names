@@ -26,19 +26,19 @@ export const book = async(id: string) => {
     id,
     orn: `https://openstax.org/orn/content:book/${id}`,
     type: 'content:book' as const,
-    title: oswebData.title,
-    slug: oswebData.meta.slug,
-    theme: oswebData.cover_color,
+    title: oswebData.title as string,
+    slug: oswebData.meta.slug as string,
+    theme: oswebData.cover_color as string,
     urls: {
-      default: oswebData.meta.html_url,
-      information: oswebData.meta.html_url,
-      experience: oswebData.webview_rex_link,
+      default: oswebData.meta.html_url as string,
+      information: oswebData.meta.html_url as string,
+      experience: oswebData.webview_rex_link as string,
     },
     images: {
-      default: oswebData.cover_url,
-      square: oswebData.cover_url,
-      wide: oswebData.title_image_url,
-      promotional: oswebData.promote_image.meta.download_url,
+      default: oswebData.cover_url as string,
+      square: oswebData.cover_url as string,
+      wide: oswebData.title_image_url as string,
+      promotional: oswebData.promote_image.meta.download_url as string,
     }
   };
 };
@@ -47,8 +47,8 @@ const mapTree = (bookId: string) => (tree: any) => {
   if (tree.contents) {
     const subTreeId = tree.id.split('@')[0];
     return {
-      id: subTreeId,
-      title: tree.title,
+      id: subTreeId as string,
+      title: tree.title as string,
       contents: tree.contents.map(mapTree(bookId)),
       orn: `https://openstax.org/orn/content:collection/${bookId}:${subTreeId}`,
       type: 'content:collection' as const,
@@ -56,8 +56,8 @@ const mapTree = (bookId: string) => (tree: any) => {
   } else {
     const pageId = tree.id.split('@')[0];
     return {
-      id: pageId,
-      title: tree.title,
+      id: pageId as string,
+      title: tree.title as string,
       orn: `https://openstax.org/orn/content:page/${bookId}:${pageId}`,
       type: 'content:page' as const,
     };
@@ -103,7 +103,7 @@ export const collection = async({bookId, collectionId}: {bookId: string; collect
 
   return {
     id: collectionId,
-    title: tree.title,
+    title: tree.title as string,
     book: bookData,
     contents: tree.contents.map(mapTree(bookId)),
     orn: `https://openstax.org/orn/content:collection/${bookId}:${collectionId}`,
@@ -127,12 +127,12 @@ export const page = async({bookId, pageId}: {bookId: string; pageId: string}) =>
     orn: `https://openstax.org/orn/content:page/${bookId}:${pageId}`,
     id: pageId,
     type: 'content:page' as const,
-    title: archiveData.title,
+    title: archiveData.title as string,
     book: bookData,
-    slug: archiveData.slug,
+    slug: archiveData.slug as string,
     urls: {
-      default: rexUrl,
-      experience: rexUrl
+      default: rexUrl as string,
+      experience: rexUrl as string
     }
   };
 };
