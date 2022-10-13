@@ -25,7 +25,7 @@ export const book = async(id: string) => {
   return {
     id,
     orn: `https://openstax.org/orn/content:book/${id}`,
-    type: 'content:book',
+    type: 'content:book' as const,
     title: oswebData.title,
     slug: oswebData.meta.slug,
     theme: oswebData.cover_color,
@@ -51,7 +51,7 @@ const mapTree = (bookId: string) => (tree: any) => {
       title: tree.title,
       contents: tree.contents.map(mapTree(bookId)),
       orn: `https://openstax.org/orn/content:collection/${bookId}:${subTreeId}`,
-      type: 'content:collection',
+      type: 'content:collection' as const,
     };
   } else {
     const pageId = tree.id.split('@')[0];
@@ -59,7 +59,7 @@ const mapTree = (bookId: string) => (tree: any) => {
       id: pageId,
       title: tree.title,
       orn: `https://openstax.org/orn/content:page/${bookId}:${pageId}`,
-      type: 'content:page',
+      type: 'content:page' as const,
     };
   }
 };
@@ -107,7 +107,7 @@ export const collection = async({bookId, collectionId}: {bookId: string; collect
     book: bookData,
     contents: tree.contents.map(mapTree(bookId)),
     orn: `https://openstax.org/orn/content:collection/${bookId}:${collectionId}`,
-    type: 'content:collection',
+    type: 'content:collection' as const,
   };
 };
 
@@ -126,7 +126,7 @@ export const page = async({bookId, pageId}: {bookId: string; pageId: string}) =>
   return {
     orn: `https://openstax.org/orn/content:page/${bookId}:${pageId}`,
     id: pageId,
-    type: 'content:page',
+    type: 'content:page' as const,
     title: archiveData.title,
     book: bookData,
     slug: archiveData.slug,
@@ -145,7 +145,7 @@ export const element = async({bookId, pageId, elementId}: {bookId: string; pageI
   return {
     orn: `https://openstax.org/orn/content:element/${bookId}:${pageId}:${elementId}`,
     id: elementId,
-    type: 'content:element',
+    type: 'content:element' as const,
     page: pageData,
     urls: {
       default: url,
