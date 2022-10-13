@@ -13,7 +13,6 @@ export const locate = async (orn: string) => {
 
     if (match) {
       return await resolver(match.params);
-
     }
   }
 
