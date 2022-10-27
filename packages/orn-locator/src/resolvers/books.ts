@@ -134,7 +134,7 @@ export const bookDetail = async(id: string) => {
 
   return {
     ...book,
-    contents: archiveData.tree.contents.map(mapTree(id)),
+    contents: (archiveData.tree.contents as any[]).map(mapTree(id)),
   };
 };
 
@@ -152,7 +152,7 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
     id: subbookId,
     title: tree.title as string,
     book: bookData,
-    contents: tree.contents.map(mapTree(bookId)),
+    contents: (tree.contents as any[]).map(mapTree(bookId)),
     orn: `https://openstax.org/orn/book:subbook/${bookId}:${subbookId}`,
     type: 'book:subbook' as const,
   };
