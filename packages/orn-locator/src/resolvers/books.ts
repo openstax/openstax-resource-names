@@ -86,24 +86,27 @@ export const book = async(id: string) => {
   return (await commonBook(id)).book;
 };
 
-const mapTree = (bookId: string) => (tree: any) => {
+type TreeElement = {id: string; title: string; orn: string; type: 'book:page'; slug: string}
+  | {id: string; title: string; orn: string; type: 'book:subbook'; contents: TreeElement[]};
+
+const mapTree = (bookId: string) => (tree: any): TreeElement => {
   if (tree.contents) {
     const subTreeId = tree.id.split('@')[0];
     return {
-      id: subTreeId as string,
-      title: tree.title as string,
+      id: subTreeId,
+      title: tree.title,
       contents: tree.contents.map(mapTree(bookId)),
       orn: `https://openstax.org/orn/book:subbook/${bookId}:${subTreeId}`,
-      type: 'book:subbook' as const,
+      type: 'book:subbook',
     };
   } else {
     const pageId = tree.id.split('@')[0];
     return {
-      id: pageId as string,
-      title: tree.title as string,
+      id: pageId,
+      title: tree.title,
       orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
-      slug: tree.slug as string,
-      type: 'book:page' as const,
+      slug: tree.slug,
+      type: 'book:page'
     };
   }
 };

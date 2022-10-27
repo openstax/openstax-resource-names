@@ -16,7 +16,7 @@ export const locate = async (orn: string) => {
     }
   }
 
-  return {type: 'not-found', orn};
+  return {type: 'not-found', orn} as const;
 };
 
 export const locateAll = (orn: string[]) => {
