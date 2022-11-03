@@ -34,7 +34,7 @@ export const library = async(language: string) => {
         .filter(([, config]: [any, any]) => config.retired !== true)
         .map(([id]) => book(id))
     ))
-      .filter(book => 
+      .filter(book =>
         book.language === language
         && book.state === 'live'
       ),
@@ -86,15 +86,18 @@ export const book = async(id: string) => {
   return (await commonBook(id)).book;
 };
 
-type TreeElement = {id: string; title: string; orn: string; type: 'book:page'; slug: string}
-  | {id: string; title: string; orn: string; type: 'book:subbook'; contents: TreeElement[]};
+type TreePageElement = {id: string; title: string; orn: string; type: 'book:page'; slug: string};
+type TreeElement = TreePageElement
+  | {id: string; title: string; orn: string; type: 'book:subbook'; contents: TreeElement[]; default_page: undefined | TreePageElement};
 
 const mapTree = (bookId: string) => (tree: any): TreeElement => {
   if (tree.contents) {
     const subTreeId = tree.id.split('@')[0];
+    const default_page = findTreeNode(t => !('contents' in t), tree);
     return {
       id: subTreeId,
       title: tree.title,
+      default_page: default_page ? mapTree(bookId)(default_page) as TreePageElement : undefined,
       contents: tree.contents.map(mapTree(bookId)),
       orn: `https://openstax.org/orn/book:subbook/${bookId}:${subTreeId}`,
       type: 'book:subbook',
@@ -150,11 +153,13 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
   ;
 
   const tree = findTreeNodeById(subbookId, archiveData.tree);
+  const default_page = findTreeNode(t => !('contents' in t), tree);
 
   return {
     id: subbookId,
     title: tree.title as string,
     book: bookData,
+    default_page: default_page ? mapTree(bookId)(default_page) : undefined,
     contents: (tree.contents as any[]).map(mapTree(bookId)),
     orn: `https://openstax.org/orn/book:subbook/${bookId}:${subbookId}`,
     type: 'book:subbook' as const,
