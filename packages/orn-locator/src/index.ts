@@ -26,13 +26,13 @@ export const locateAll = (orn: string[]) => {
 export default {locate, locateAll};
 
 
-type Unpromise<T> = T extends Promise<infer I> ? I : never;
+type UnPromise<T> = T extends Promise<infer I> ? I : never;
 type FilterWithKey<T, K extends string> = T extends {[key in K]: any} ? T : never; 
 
 /*
  * this is anything that might be returned by `locate` or `locateAll`
  */
-export type AnyOrnLocateResponse = Unpromise<ReturnType<typeof locate>>;
+export type AnyOrnLocateResponse = UnPromise<ReturnType<typeof locate>>;
 
 /*
  * resources can have `contents` trees that can contain summary versions of the main resource
