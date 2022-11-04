@@ -6,6 +6,7 @@ describe('locateAll', () => {
 [
   {
     "orn": "https://openstax.org/orn/test",
+    "type": "not-found",
   },
 ]
 `);
@@ -17,6 +18,7 @@ describe('locate', () => {
     expect(await locate('https://openstax.org/orn/test')).toMatchInlineSnapshot(`
 {
   "orn": "https://openstax.org/orn/test",
+  "type": "not-found",
 }
 `);
   });
