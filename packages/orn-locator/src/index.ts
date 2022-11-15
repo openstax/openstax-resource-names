@@ -26,7 +26,7 @@ export const locateAll = (orn: string[]) => {
 export default {locate, locateAll};
 
 
-type FilterWithKey<T, K extends string> = T extends {[key in K]: any} ? T : never; 
+type FilterWithKey<T, K extends string> = T extends {[key in K]: any} ? T : never;
 
 /*
  * this is anything that might be returned by `locate` or `locateAll`
@@ -52,6 +52,14 @@ export type FilterOrnTypes<T, K extends AnyOrnResource['type']> = T extends {typ
 export const isResourceOrContentOfType = <R extends AnyOrnResource, T extends AnyOrnResource['type'][]>(
   resource: R, types: T
 ): resource is FilterOrnTypes<R, T[number]> =>
+  'type' in resource && types.includes(resource.type);
+
+
+/*
+ * when passing guards into `Array.filter` you need to pass just the guard, not the guard wrapped in another function
+ * for it to correctly filter the response type, so this is a helper for doing that.
+ */
+export const isResourceOrContentOfTypeFilter = <T extends AnyOrnResource['type'][], R extends AnyOrnResource = AnyOrnResource>(types: T) =>  (resource: R): resource is FilterOrnTypes<R, T[number]> =>
   'type' in resource && types.includes(resource.type);
 
 /*
