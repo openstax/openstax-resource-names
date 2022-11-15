@@ -1,6 +1,6 @@
 {
   "name": "@openstax/orn-locator",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "main": "dist/index.js",
   "types": "index.d.ts",
   "exports": {
