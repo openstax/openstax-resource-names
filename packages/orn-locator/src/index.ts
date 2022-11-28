@@ -32,7 +32,7 @@ export const search = async(query: string, filters: {[key: string]: string | str
 
 export { patterns };
 
-export default {locate, locateAll, patterns};
+export default {locate, locateAll, patterns, search};
 
 
 type FilterWithKey<T, K extends string> = T extends {[key in K]: any} ? T : never;
