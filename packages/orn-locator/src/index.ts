@@ -16,7 +16,23 @@ export const locateAll = (orn: string[]) => {
   return Promise.all(orn.map(locate));
 };
 
-export default {locate, locateAll};
+export const search = async(query: string, filters: {[key: string]: string | string[]}) => {
+  type Patterns = typeof patterns;
+  const result: {[K in keyof Patterns]?: {name: string; items: Awaited<ReturnType<NonNullable<Patterns[K]['search']>>>}} = {};
+
+  for (const [key, pattern] of Object.entries(patterns)) {
+    const innerResult = await pattern.search?.(query, filters);
+    if (innerResult && innerResult.length > 0) {
+      result[key as keyof Patterns] = {items: innerResult as any, name: pattern.name};
+    }
+  }
+
+  return result;
+};
+
+export { patterns };
+
+export default {locate, locateAll, patterns};
 
 
 type FilterWithKey<T, K extends string> = T extends {[key in K]: any} ? T : never;
