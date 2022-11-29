@@ -1,6 +1,6 @@
 import memoize from 'lodash/fp/memoize';
-import fetch from 'node-fetch';
 import { isResourceOrContentOfTypeFilter, locateAll } from '..';
+import { fetch } from '../utils/browsersafe-fetch';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
 const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url';
@@ -186,6 +186,7 @@ export const page = async({bookId, pageId}: {bookId: string; pageId: string}) =>
     id: pageId,
     type: 'book:page' as const,
     title: archiveData.title as string,
+    contextTitle: `${bookData.title} / ${archiveData.title}`,
     book: bookData,
     slug: archiveData.slug as string,
     urls: {
