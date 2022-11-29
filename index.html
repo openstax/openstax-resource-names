@@ -1,0 +1,121 @@
+<html>
+  <head>
+    <title>search openstax resource names</title>
+    <script src="./orn-locator.js"></script>
+
+    <script>
+      function buildResultList(container, items) {
+
+        for (const item of items) {
+          const itemContainer = document.createElement('div');
+          container.append(itemContainer);
+
+          const urls = 'urls' in item ? item.urls : {};
+          const mainUrl = urls.main;
+
+          const title = document.createElement('h3');
+          const titleText = item.contextTitle || item.title || item.id;
+          if (mainUrl) {
+            const anchor = document.createElement('a');
+            anchor.href = mainUrl;
+            anchor.innerText = titleText;
+            title.append(anchor);
+          } else {
+            title.innerText = titleText;
+          }
+          itemContainer.append(title);
+
+
+          const info = document.createElement('dl');
+          itemContainer.append(info);
+
+          const ornLabel = document.createElement('dt');
+          ornLabel.innerText = 'orn:'
+          info.append(ornLabel);
+
+          const orn = document.createElement('dd');
+          orn.innerText = item.orn;
+          info.append(orn);
+
+          const linksLabel = document.createElement('dt');
+          linksLabel.innerText = 'links:'
+          const links = document.createElement('dd');
+
+          for (const [text, url] of Object.entries(urls)) {
+            if (linksLabel.parentNode === null) {
+              info.append(linksLabel);
+              info.append(links);
+            }
+
+            const anchor = document.createElement('a');
+            anchor.href = mainUrl;
+            anchor.innerText = text;
+            links.append(anchor);
+            links.append(' ');
+          }
+        }
+      }
+
+      function buildResultsHTML(results) {
+        const tabBar = document.createElement('div');
+        tabBar.classList.add('tab-bar');
+
+        const container = document.getElementById('results')
+        container.innerHTML = '';
+        container.append(tabBar)
+
+        for (const [key, resultType] of Object.entries(results)) {
+          const label = document.createElement('label');
+          label.setAttribute('for', key);
+          label.innerText = resultType.name
+          tabBar.append(label);
+
+          const tabContainer = document.createElement('div');
+          tabContainer.classList.add('tab-container');
+          container.append(tabContainer);
+
+          const radio = document.createElement('input');
+          radio.checked = container.childElementCount === 2;
+          radio.type = 'radio'
+          radio.id = key;
+          radio.name = 'tabs';
+          tabContainer.append(radio);
+
+          const content = document.createElement('div');
+          content.classList.add('tab-content');
+          buildResultList(content, resultType.items);
+          tabContainer.append(content);
+        }
+      }
+      function submitSearch(e) {
+        e.preventDefault();
+        const query = e.target.query.value;
+
+        orn.search(query).then(buildResultsHTML);
+      }
+    </script>
+    <style>
+      .tab-bar label {
+        padding: 10px;
+        border-radius: 4px 4px 0 0;
+        border: 1px solid #ccc;
+        margin: 0;
+        display: inline-block;
+      }
+      .tab-container input {
+        display: none;
+      }
+      .tab-container input:not(:checked) + .tab-content {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <form action="#" onsubmit="submitSearch(event)">
+      <input type="search" name="query">
+      <input type="submit">
+    </form>
+    <div id="results">
+    </div>
+  </body>
+</html>
