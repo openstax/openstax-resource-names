@@ -208,12 +208,12 @@ export const element = async({bookId, pageId, elementId}: {bookId: string; pageI
   const url = `${pageResponse.urls.experience}#${elementId}`;
   const element = pageContent.getElementById(elementId);
 
-  console.log(element);
-
   if (!element) {
     throw new Error('element not found');
   }
 
+  // there are obviously more element types than this, but i'm limiting support here to stuff
+  // that open-search supports
   const elementType = element.tagName === 'figure' && element.parentElement?.matches('.os-figure')
     ? 'figure'
     : element.tagName === 'P'
