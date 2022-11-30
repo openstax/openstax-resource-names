@@ -220,33 +220,33 @@ const memoryTreeSearch = (getScore: (node: any) => number) => (node: any): Array
 
   return score > 0 ? [{node, score}, ...contents] : contents;
 };
-export const bookSearch = async(query: string, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof book>>[]> => {
+export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof book>>[]> => {
   const scopes = 'scope' in filters
     ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
       .filter(isResourceOrContentOfTypeFilter(['library']))
     : [await library('all')];
 
-  return doSearch(query, ['book'])(scopes);
+  return doSearch(query, ['book'], limit)(scopes);
 };
-export const pageSearch = async(query: string, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
+export const pageSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
   const scopes = 'scope' in filters
     ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
       .filter(isResourceOrContentOfTypeFilter(['book'])).map(book => book.id)
     : (await library('all')).contents.map(book => book.id);
 
   return await Promise.all(scopes.map(bookDetail))
-    .then(doSearch(query, ['book:page']))
+    .then(doSearch(query, ['book:page'], limit))
   ;
 };
 
-const doSearch = (query: string, filterTypes: string[]) => (inputs: any[]): Promise<any[]> => {
+const doSearch = (query: string, filterTypes: string[], limit: number) => (inputs: any[]): Promise<any[]> => {
   const results = inputs.map(memoryTreeSearch(parseSearchQuery(query, filterTypes)))
     .reduce((result, item) => [...result, ...item], []);
 
   results.sort((a, b) => b.score - a.score);
   return locateAll(
     results
-      .slice(0, 5)
+      .slice(0, limit)
       .map(result => result.node.orn)
   );
 };

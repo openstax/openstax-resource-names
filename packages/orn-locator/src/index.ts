@@ -16,12 +16,12 @@ export const locateAll = (orn: string[]) => {
   return Promise.all(orn.map(locate));
 };
 
-export const search = async(query: string, filters: {[key: string]: string | string[]}) => {
+export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}) => {
   type Patterns = typeof patterns;
   const result: {[K in keyof Patterns]?: {name: string; items: Awaited<ReturnType<NonNullable<Patterns[K]['search']>>>}} = {};
 
   for (const [key, pattern] of Object.entries(patterns)) {
-    const innerResult = await pattern.search?.(query, filters);
+    const innerResult = await pattern.search?.(query, limit, filters);
     if (innerResult && innerResult.length > 0) {
       result[key as keyof Patterns] = {items: innerResult as any, name: pattern.name};
     }
