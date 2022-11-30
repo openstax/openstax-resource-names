@@ -213,12 +213,12 @@ export const element = async({bookId, pageId, elementId}: {bookId: string; pageI
   };
 };
 
-const memoryTreeSearch = (getRank: (node: any) => number) => (node: any): Array<{node: any; rank: number}> => {
-  const rank = getRank(node);
-  const contents = ('contents' in node ? node.contents.map(memoryTreeSearch(getRank)) : [])
+const memoryTreeSearch = (getScore: (node: any) => number) => (node: any): Array<{node: any; score: number}> => {
+  const score = getScore(node);
+  const contents = ('contents' in node ? node.contents.map(memoryTreeSearch(getScore)) : [])
     .reduce((result: any[], item: any[]) => [...result, ...item], []);
 
-  return rank > 0 ? [{node, rank}, ...contents] : contents;
+  return score > 0 ? [{node, score}, ...contents] : contents;
 };
 export const bookSearch = async(query: string, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof book>>[]> => {
   const scopes = 'scope' in filters
@@ -243,7 +243,7 @@ const doSearch = (query: string, filterTypes: string[]) => (inputs: any[]): Prom
   const results = inputs.map(memoryTreeSearch(parseSearchQuery(query, filterTypes)))
     .reduce((result, item) => [...result, ...item], []);
 
-  results.sort((a, b) => b.rank - a.rank);
+  results.sort((a, b) => b.score - a.score);
   return locateAll(
     results
       .slice(0, 5)
@@ -251,30 +251,30 @@ const doSearch = (query: string, filterTypes: string[]) => (inputs: any[]): Prom
   );
 };
 const parseSearchQuery = (query: string, filterTypes: string[]) => {
-  const quotedTerms = [...query.matchAll(/"(.+)"/g)].map(match => match[1]);
+  const quotedTerms = [...query.matchAll(/"([^"]+)"/g)].map(match => match[1]);
   const commaSeparatedPhrases = [...query.replace('"', '').matchAll(/([^,]+)/g)].map(match => match[1]);
   const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]);
 
-  const getRank = (node: any) => {
+  const getScore = (node: any) => {
     const text = 'title' in node ? node.title : '';
-    let rank = 0;
+    let score = 0;
 
     if (!filterTypes.includes(node.type)) {
-      return rank;
+      return score;
     }
 
-    rank += (5 * quotedTerms.reduce((result, term) =>
+    score += (5 * quotedTerms.reduce((result, term) =>
       result + [...text.matchAll(new RegExp(term, 'ig'))].length, 0
     ));
-    rank += (3 * commaSeparatedPhrases.reduce((result, term) =>
+    score += (3 * commaSeparatedPhrases.reduce((result, term) =>
       result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
     ));
-    rank += words.reduce((result, term) =>
+    score += words.reduce((result, term) =>
       result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
     );
 
-    return rank;
+    return score;
   };
 
-  return getRank;
+  return getScore;
 };
