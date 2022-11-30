@@ -1,5 +1,6 @@
 import memoize from 'lodash/fp/memoize';
 import { isResourceOrContentOfTypeFilter, locateAll } from '..';
+import { getDOMParser } from '../utils/browsersafe-dom-parser';
 import { fetch } from '../utils/browsersafe-fetch';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
@@ -169,8 +170,7 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
   };
 };
 
-
-export const page = async({bookId, pageId}: {bookId: string; pageId: string}) => {
+const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) => {
   const bookData = await book(bookId);
 
   const {archivePath, bookVersion} = await getArchiveInfo(bookId);
@@ -181,7 +181,7 @@ export const page = async({bookId, pageId}: {bookId: string; pageId: string}) =>
 
   const rexUrl = `https://openstax.org/books/${bookData.slug}/pages/${archiveData.slug}`;
 
-  return {
+  return [bookData, archiveData, {
     orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
     id: pageId,
     type: 'book:page' as const,
@@ -193,24 +193,76 @@ export const page = async({bookId, pageId}: {bookId: string; pageId: string}) =>
       main: rexUrl as string,
       experience: rexUrl as string
     }
-  };
+  }] as const;
+};
+
+export const page = async(args: {bookId: string; pageId: string}) => {
+  const [,, pageResponse] = await pageWithData(args);
+  return pageResponse;
 };
 
 export const element = async({bookId, pageId, elementId}: {bookId: string; pageId: string; elementId: string}) => {
-  const pageData = await page({bookId, pageId});
+  const [, archiveData, pageResponse] = await pageWithData({bookId, pageId});
 
-  const url = `${pageData.urls.experience}#${elementId}`;
+  const pageContent = new (await getDOMParser())().parseFromString(archiveData.content, 'application/xhtml+xml');
+  const url = `${pageResponse.urls.experience}#${elementId}`;
+  const element = pageContent.getElementById(elementId);
+
+  console.log(element);
+
+  if (!element) {
+    throw new Error('element not found');
+  }
+
+  const elementType = element.tagName === 'figure' && element.parentElement?.matches('.os-figure')
+    ? 'figure'
+    : element.tagName === 'P'
+      ? 'paragraph'
+      : 'element'
+  ;
+
+  const titleSuffix = elementType === 'figure'
+    ? element.parentElement?.querySelector('.os-caption-container .os-number')?.textContent
+    : ''
+  ;
+
+  const title = `${elementType[0]?.toUpperCase() + elementType.substring(1)}${titleSuffix ? ` ${titleSuffix}` : ''} in ${pageResponse.contextTitle}`;
 
   return {
     orn: `https://openstax.org/orn/book:page:element/${bookId}:${pageId}:${elementId}`,
     id: elementId,
+    title,
+    elementType,
     type: 'book:page:element' as const,
-    page: pageData,
+    page: pageResponse,
     urls: {
       main: url,
       experience: url
     }
   };
+};
+
+export const elementSearch = async(query: string, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof element>>[]> => {
+  const scopes = 'scope' in filters
+    ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
+      .filter(isResourceOrContentOfTypeFilter(['book'])).map(book => book.id)
+    : (await library('all')).contents.map(book => book.id);
+
+  const books = await Promise.all(scopes.map(async bookId => {
+    const {archivePath, bookVersion} = await getArchiveInfo(bookId);
+    const archiveVersion = archivePath.replace('/apps/archive/', '');
+    return `${archiveVersion}/${bookId}@${bookVersion}`;
+  }));
+
+  return fetch(`https://openstax.org/open-search/api/v0/search?q=${query}&books=${encodeURIComponent(books.join(','))}&index_strategy=i1&search_strategy=s1`)
+    .then(response => response.json())
+    .then(json => json.hits.hits.slice(0, 5) as any[])
+    .then(results => Promise.all(results.map(result => {
+      const bookId = result._index.match(/__(.*)@/)[1];
+      const pageId = result._source.page_id.split('@')[0];
+      const elementId = result._source.element_id;
+      return element({bookId, pageId, elementId});
+    })));
 };
 
 const memoryTreeSearch = (getRank: (node: any) => number) => (node: any): Array<{node: any; rank: number}> => {
@@ -253,7 +305,7 @@ const doSearch = (query: string, filterTypes: string[]) => (inputs: any[]): Prom
 const parseSearchQuery = (query: string, filterTypes: string[]) => {
   const quotedTerms = [...query.matchAll(/"(.+)"/g)].map(match => match[1]);
   const commaSeparatedPhrases = [...query.replace('"', '').matchAll(/([^,]+)/g)].map(match => match[1]);
-  const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]);
+  const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]).filter(word => word.length > 3);
 
   const getRank = (node: any) => {
     const text = 'title' in node ? node.title : '';
