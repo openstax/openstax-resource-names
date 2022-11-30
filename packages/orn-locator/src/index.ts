@@ -1,18 +1,11 @@
-import memoize from 'lodash/fp/memoize';
-import * as pathToRegexp from 'path-to-regexp';
 import { patterns } from './ornPatterns';
 
-const compileMatcher = memoize((path: string) =>
-  pathToRegexp.match<any>(path, {decode: decodeURIComponent})
-);
-
 export const locate = async (orn: string) => {
-
-  for (const [path, resolver] of Object.entries(patterns)) {
-    const match = compileMatcher(path)(orn);
+  for (const pattern of Object.values(patterns)) {
+    const match = pattern.match(orn);
 
     if (match) {
-      return await resolver(match.params);
+      return await pattern.resolve(match.params);
     }
   }
 
@@ -23,7 +16,23 @@ export const locateAll = (orn: string[]) => {
   return Promise.all(orn.map(locate));
 };
 
-export default {locate, locateAll};
+export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}) => {
+  type Patterns = typeof patterns;
+  const result: {[K in keyof Patterns]?: {name: string; items: Awaited<ReturnType<NonNullable<Patterns[K]['search']>>>}} = {};
+
+  for (const [key, pattern] of Object.entries(patterns)) {
+    const innerResult = await pattern.search?.(query, limit, filters);
+    if (innerResult && innerResult.length > 0) {
+      result[key as keyof Patterns] = {items: innerResult as any, name: pattern.name};
+    }
+  }
+
+  return result;
+};
+
+export { patterns };
+
+export default {locate, locateAll, patterns, search};
 
 
 type FilterWithKey<T, K extends string> = T extends {[key in K]: any} ? T : never;

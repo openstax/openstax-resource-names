@@ -3,9 +3,11 @@
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
   "language": "en",
   "words": [
+    "browsersafe",
     "openstax",
     "osweb",
-    "subbook"
+    "subbook",
+    "subbooks"
   ],
   "flagWords": [],
   "ignorePaths": [

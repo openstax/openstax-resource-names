@@ -1,25 +1,27 @@
-import fetch from 'node-fetch';
+import memoize from 'lodash/fp/memoize';
+import { isResourceOrContentOfTypeFilter, locateAll } from '..';
+import { fetch } from '../utils/browsersafe-fetch';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
 const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url';
 
-const getArchiveInfo = async (bookId: string) => {
-  const releaseJson = await fetch('https://openstax.org/rex/release.json')
+const getReleaseJson = memoize(async () => {
+  return fetch('https://openstax.org/rex/release.json')
     .then(response => response.json())
   ;
-
+});
+const getArchiveInfo = memoize(async (bookId: string) => {
+  const releaseJson = await getReleaseJson();
   const bookConfig = releaseJson.books[bookId];
 
   return {
     archivePath: bookConfig.archiveOverride || releaseJson.archiveUrl,
     bookVersion: bookConfig.defaultVersion,
   };
-};
+});
 
 export const library = async(language: string) => {
-  const releaseJson = await fetch('https://openstax.org/rex/release.json')
-    .then(response => response.json())
-  ;
+  const releaseJson = await getReleaseJson();
 
   return {
     id: 'library',
@@ -35,17 +37,18 @@ export const library = async(language: string) => {
         .map(([id]) => book(id))
     ))
       .filter(book =>
-        book.language === language
+        (language === 'all' || book.language === language)
         && book.state === 'live'
       ),
   };
 };
 
-const commonBook = async(id: string) => {
+const commonBook = memoize(async(id: string) => {
   const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
     .then(response => response.json() as any)
     .then(data => data.items[0])
   ;
+
   const {archivePath, bookVersion} = await getArchiveInfo(id);
   const archiveUrl = `https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`;
   const archiveData = await fetch(archiveUrl)
@@ -80,7 +83,7 @@ const commonBook = async(id: string) => {
       }
     }
   };
-};
+});
 
 export const book = async(id: string) => {
   return (await commonBook(id)).book;
@@ -135,14 +138,14 @@ const findTreeNode = (predicate: (tree: any) => boolean, tree: any): any => {
   }
 };
 
-export const bookDetail = async(id: string) => {
+export const bookDetail = memoize(async(id: string) => {
   const {archiveData, book} = await commonBook(id);
 
   return {
     ...book,
     contents: (archiveData.tree.contents as any[]).map(mapTree(id)),
   };
-};
+});
 
 export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: string}) => {
   const bookData = await book(bookId);
@@ -183,6 +186,7 @@ export const page = async({bookId, pageId}: {bookId: string; pageId: string}) =>
     id: pageId,
     type: 'book:page' as const,
     title: archiveData.title as string,
+    contextTitle: `${bookData.title} / ${archiveData.title}`,
     book: bookData,
     slug: archiveData.slug as string,
     urls: {
@@ -207,4 +211,70 @@ export const element = async({bookId, pageId, elementId}: {bookId: string; pageI
       experience: url
     }
   };
+};
+
+const memoryTreeSearch = (getScore: (node: any) => number) => (node: any): Array<{node: any; score: number}> => {
+  const score = getScore(node);
+  const contents = ('contents' in node ? node.contents.map(memoryTreeSearch(getScore)) : [])
+    .reduce((result: any[], item: any[]) => [...result, ...item], []);
+
+  return score > 0 ? [{node, score}, ...contents] : contents;
+};
+export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof book>>[]> => {
+  const scopes = 'scope' in filters
+    ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
+      .filter(isResourceOrContentOfTypeFilter(['library']))
+    : [await library('all')];
+
+  return doSearch(query, ['book'], limit)(scopes);
+};
+export const pageSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
+  const scopes = 'scope' in filters
+    ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
+      .filter(isResourceOrContentOfTypeFilter(['book'])).map(book => book.id)
+    : (await library('all')).contents.map(book => book.id);
+
+  return await Promise.all(scopes.map(bookDetail))
+    .then(doSearch(query, ['book:page'], limit))
+  ;
+};
+
+const doSearch = (query: string, filterTypes: string[], limit: number) => (inputs: any[]): Promise<any[]> => {
+  const results = inputs.map(memoryTreeSearch(parseSearchQuery(query, filterTypes)))
+    .reduce((result, item) => [...result, ...item], []);
+
+  results.sort((a, b) => b.score - a.score);
+  return locateAll(
+    results
+      .slice(0, limit)
+      .map(result => result.node.orn)
+  );
+};
+const parseSearchQuery = (query: string, filterTypes: string[]) => {
+  const quotedTerms = [...query.matchAll(/"([^"]+)"/g)].map(match => match[1]);
+  const commaSeparatedPhrases = [...query.replace('"', '').matchAll(/([^,]+)/g)].map(match => match[1]);
+  const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]);
+
+  const getScore = (node: any) => {
+    const text = 'title' in node ? node.title : '';
+    let score = 0;
+
+    if (!filterTypes.includes(node.type)) {
+      return score;
+    }
+
+    score += (5 * quotedTerms.reduce((result, term) =>
+      result + [...text.matchAll(new RegExp(term, 'ig'))].length, 0
+    ));
+    score += (3 * commaSeparatedPhrases.reduce((result, term) =>
+      result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
+    ));
+    score += words.reduce((result, term) =>
+      result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
+    );
+
+    return score;
+  };
+
+  return getScore;
 };

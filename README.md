@@ -1,6 +1,9 @@
 # Openstax Resource Name (ORN)
 ORNs provide a way to universally identify resources. A resource could be a book, a part of a book, a quiz, an ancillary resource, or any other type of thing that we need to define. An ORN may include a UUID, but it will also provide the context necessary to identify the resource type based on the identifier.
 
+# Try it
+[search all resources](https://openstax.github.io/openstax-resource-names/)
+
 # Format
 ORN are defined in [IRI](https://www.w3.org/International/iri-edit/draft-duerst-iri.html) format. We use this format for a few reasons:
 1. we integrate with xAPI systems and that spec requires activities to be identified in IRI format
