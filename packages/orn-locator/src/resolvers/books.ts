@@ -242,7 +242,7 @@ export const element = async({bookId, pageId, elementId}: {bookId: string; pageI
   };
 };
 
-export const elementSearch = async(query: string, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof element>>[]> => {
+export const elementSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof element>>[]> => {
   const scopes = 'scope' in filters
     ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
       .filter(isResourceOrContentOfTypeFilter(['book'])).map(book => book.id)
@@ -256,7 +256,7 @@ export const elementSearch = async(query: string, filters: {[key: string]: strin
 
   return fetch(`https://openstax.org/open-search/api/v0/search?q=${query}&books=${encodeURIComponent(books.join(','))}&index_strategy=i1&search_strategy=s1`)
     .then(response => response.json())
-    .then(json => json.hits.hits.slice(0, 5) as any[])
+    .then(json => json.hits.hits.slice(0, limit) as any[])
     .then(results => Promise.all(results.map(result => {
       const bookId = result._index.match(/__(.*)@/)[1];
       const pageId = result._source.page_id.split('@')[0];
@@ -265,68 +265,68 @@ export const elementSearch = async(query: string, filters: {[key: string]: strin
     })));
 };
 
-const memoryTreeSearch = (getRank: (node: any) => number) => (node: any): Array<{node: any; rank: number}> => {
-  const rank = getRank(node);
-  const contents = ('contents' in node ? node.contents.map(memoryTreeSearch(getRank)) : [])
+const memoryTreeSearch = (getScore: (node: any) => number) => (node: any): Array<{node: any; score: number}> => {
+  const score = getScore(node);
+  const contents = ('contents' in node ? node.contents.map(memoryTreeSearch(getScore)) : [])
     .reduce((result: any[], item: any[]) => [...result, ...item], []);
 
-  return rank > 0 ? [{node, rank}, ...contents] : contents;
+  return score > 0 ? [{node, score}, ...contents] : contents;
 };
-export const bookSearch = async(query: string, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof book>>[]> => {
+export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof book>>[]> => {
   const scopes = 'scope' in filters
     ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
       .filter(isResourceOrContentOfTypeFilter(['library']))
     : [await library('all')];
 
-  return doSearch(query, ['book'])(scopes);
+  return doSearch(query, ['book'], limit)(scopes);
 };
-export const pageSearch = async(query: string, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
+export const pageSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
   const scopes = 'scope' in filters
     ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
       .filter(isResourceOrContentOfTypeFilter(['book'])).map(book => book.id)
     : (await library('all')).contents.map(book => book.id);
 
   return await Promise.all(scopes.map(bookDetail))
-    .then(doSearch(query, ['book:page']))
+    .then(doSearch(query, ['book:page'], limit))
   ;
 };
 
-const doSearch = (query: string, filterTypes: string[]) => (inputs: any[]): Promise<any[]> => {
+const doSearch = (query: string, filterTypes: string[], limit: number) => (inputs: any[]): Promise<any[]> => {
   const results = inputs.map(memoryTreeSearch(parseSearchQuery(query, filterTypes)))
     .reduce((result, item) => [...result, ...item], []);
 
-  results.sort((a, b) => b.rank - a.rank);
+  results.sort((a, b) => b.score - a.score);
   return locateAll(
     results
-      .slice(0, 5)
+      .slice(0, limit)
       .map(result => result.node.orn)
   );
 };
 const parseSearchQuery = (query: string, filterTypes: string[]) => {
-  const quotedTerms = [...query.matchAll(/"(.+)"/g)].map(match => match[1]);
+  const quotedTerms = [...query.matchAll(/"([^"]+)"/g)].map(match => match[1]);
   const commaSeparatedPhrases = [...query.replace('"', '').matchAll(/([^,]+)/g)].map(match => match[1]);
   const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]).filter(word => word.length > 3);
 
-  const getRank = (node: any) => {
+  const getScore = (node: any) => {
     const text = 'title' in node ? node.title : '';
-    let rank = 0;
+    let score = 0;
 
     if (!filterTypes.includes(node.type)) {
-      return rank;
+      return score;
     }
 
-    rank += (5 * quotedTerms.reduce((result, term) =>
+    score += (5 * quotedTerms.reduce((result, term) =>
       result + [...text.matchAll(new RegExp(term, 'ig'))].length, 0
     ));
-    rank += (3 * commaSeparatedPhrases.reduce((result, term) =>
+    score += (3 * commaSeparatedPhrases.reduce((result, term) =>
       result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
     ));
-    rank += words.reduce((result, term) =>
+    score += words.reduce((result, term) =>
       result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
     );
 
-    return rank;
+    return score;
   };
 
-  return getRank;
+  return getScore;
 };

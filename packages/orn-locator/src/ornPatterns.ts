@@ -4,7 +4,7 @@ const makePattern = <P extends object, R>({pattern, ...parts}: {
   pattern: string;
   name: string;
   resolve: (params: P) => Promise<R>;
-  search?: (query: string, filters: {[key: string]: string | string[]}) => Promise<R[]>;
+  search?: (query: string, limit: number, filters: {[key: string]: string | string[]}) => Promise<R[]>;
 }) => ({
   ...parts,
   format: pathToRegexp.compile<P>(pattern),
