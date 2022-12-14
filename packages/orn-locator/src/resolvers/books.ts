@@ -1,4 +1,5 @@
 import memoize from 'lodash/fp/memoize';
+import asyncPool from 'tiny-async-pool';
 import { isResourceOrContentOfTypeFilter, locateAll } from '..';
 import { getDOMParser } from '../utils/browsersafe-dom-parser';
 import { fetch } from '../utils/browsersafe-fetch';
@@ -23,6 +24,17 @@ const getArchiveInfo = memoize(async (bookId: string) => {
 
 export const library = async(language: string) => {
   const releaseJson = await getReleaseJson();
+  const bookIds = Object.entries(releaseJson.books)
+    .filter(([, config]: [any, any]) => config.retired !== true)
+    .map(([id]) => id);
+
+  const contents: Awaited<ReturnType<typeof book>>[] = [];
+
+  for await (const bookResult of asyncPool(2, bookIds, book)) {
+    if ((language === 'all' || bookResult.language === language) && bookResult.state === 'live') {
+      contents.push(bookResult);
+    }
+  }
 
   return {
     id: 'library',
@@ -32,15 +44,7 @@ export const library = async(language: string) => {
     urls: {
       main: 'https://openstax.org/subjects'
     },
-    contents: (await Promise.all(
-      Object.entries(releaseJson.books)
-        .filter(([, config]: [any, any]) => config.retired !== true)
-        .map(([id]) => book(id))
-    ))
-      .filter(book =>
-        (language === 'all' || book.language === language)
-        && book.state === 'live'
-      ),
+    contents,
   };
 };
 
