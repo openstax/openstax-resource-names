@@ -1,6 +1,6 @@
 import { RequestInfo, RequestInit, Response } from 'node-fetch';
 
-declare var window: any | undefined;
+declare var globalThis: any;
 
 type Fetch = (
     url: RequestInfo,
@@ -8,10 +8,7 @@ type Fetch = (
 ) => Promise<Response>;
 
 export const fetch: Fetch = async(...args) => {
-  const fetchImpl: Fetch = typeof window === 'undefined'
-    ? (await import('node-fetch')).default
-    : window.fetch
-  ;
+  const fetchImpl: Fetch = globalThis.fetch; 
 
   return fetchImpl(...args);
 };
