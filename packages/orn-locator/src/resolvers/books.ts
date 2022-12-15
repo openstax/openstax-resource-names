@@ -1,7 +1,6 @@
 import memoize from 'lodash/fp/memoize';
 import asyncPool from 'tiny-async-pool';
 import { isResourceOrContentOfTypeFilter, locateAll } from '..';
-import { getDOMParser } from '../utils/browsersafe-dom-parser';
 import { fetch } from '../utils/browsersafe-fetch';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
@@ -206,37 +205,15 @@ export const page = async(args: {bookId: string; pageId: string}) => {
 };
 
 export const element = async({bookId, pageId, elementId}: {bookId: string; pageId: string; elementId: string}) => {
-  const [, archiveData, pageResponse] = await pageWithData({bookId, pageId});
+  const [, pageResponse] = await pageWithData({bookId, pageId});
 
-  const pageContent = new (await getDOMParser())().parseFromString(archiveData.content, 'application/xhtml+xml');
   const url = `${pageResponse.urls.experience}#${elementId}`;
-  const element = pageContent.getElementById(elementId);
-
-  if (!element) {
-    throw new Error('element not found');
-  }
-
-  // there are obviously more element types than this, but i'm limiting support here to stuff
-  // that open-search supports
-  const elementType = element.tagName === 'figure' && element.parentElement?.matches('.os-figure')
-    ? 'figure'
-    : element.tagName === 'P'
-      ? 'paragraph'
-      : 'element'
-  ;
-
-  const titleSuffix = elementType === 'figure'
-    ? element.parentElement?.querySelector('.os-caption-container .os-number')?.textContent
-    : ''
-  ;
-
-  const title = `${elementType[0]?.toUpperCase() + elementType.substring(1)}${titleSuffix ? ` ${titleSuffix}` : ''} in ${pageResponse.contextTitle}`;
+  const title = `Element in ${pageResponse.contextTitle}`;
 
   return {
     orn: `https://openstax.org/orn/book:page:element/${bookId}:${pageId}:${elementId}`,
     id: elementId,
     title,
-    elementType,
     type: 'book:page:element' as const,
     page: pageResponse,
     urls: {

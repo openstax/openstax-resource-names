@@ -38,7 +38,6 @@
     "ci": "CI=true npm-run-all ci:*"
   },
   "dependencies": {
-    "jsdom": "^20.0.3",
     "lodash": "^4.17.21",
     "node-fetch": "^2",
     "path-to-regexp": "^6.2.0",
