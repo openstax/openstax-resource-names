@@ -14,13 +14,7 @@ export const locate = async (orn: string) => {
 };
 
 export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: number} = {}) => {
-  const results: Awaited<ReturnType<typeof locate>>[] = [];
-  
-  for await (const result of asyncPool(concurrency, orn, locate)) {
-    results.push(result);
-  }
-
-  return results;
+  return await asyncPool(concurrency, orn, locate);
 };
 
 export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}) => {

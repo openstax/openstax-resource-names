@@ -28,13 +28,9 @@ export const library = async(language: string) => {
     .filter(([, config]: [any, any]) => config.retired !== true)
     .map(([id]) => id);
 
-  const contents: Awaited<ReturnType<typeof book>>[] = [];
-
-  for await (const bookResult of asyncPool(2, bookIds, book)) {
-    if ((language === 'all' || bookResult.language === language) && bookResult.state === 'live') {
-      contents.push(bookResult);
-    }
-  }
+  const contents: Awaited<ReturnType<typeof book>>[] = (await asyncPool(2, bookIds, book)).filter(book => 
+    (language === 'all' || book.language === language) && book.state === 'live'
+  );
 
   return {
     id: 'library',
