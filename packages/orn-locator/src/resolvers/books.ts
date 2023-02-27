@@ -205,7 +205,7 @@ export const page = async(args: {bookId: string; pageId: string}) => {
 };
 
 export const element = async({bookId, pageId, elementId}: {bookId: string; pageId: string; elementId: string}) => {
-  const [, pageResponse] = await pageWithData({bookId, pageId});
+  const [,, pageResponse] = await pageWithData({bookId, pageId});
 
   const url = `${pageResponse.urls.experience}#${elementId}`;
   const title = `Element in ${pageResponse.contextTitle}`;
