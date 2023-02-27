@@ -41,6 +41,7 @@
     "lodash": "^4.17.21",
     "node-fetch": "^2",
     "path-to-regexp": "^6.2.0",
+    "string-strip-html": "8.4.0",
     "tiny-async-pool": "^2.1.0"
   },
   "devDependencies": {

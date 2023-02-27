@@ -1,4 +1,5 @@
 import memoize from 'lodash/fp/memoize';
+import { stripHtml } from 'string-strip-html';
 import asyncPool from 'tiny-async-pool';
 import { isResourceOrContentOfTypeFilter, locateAll } from '..';
 import { fetch } from '../utils/browsersafe-fetch';
@@ -174,7 +175,16 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
 };
 
 const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) => {
-  const bookData = await book(bookId);
+  const {archiveData: archiveBook, book: bookData} = await commonBook(bookId);
+  const treeNode = findTreeNodeById(pageId, archiveBook.tree);
+
+  const {result: contextTitle, ranges} = stripHtml(treeNode.title);
+
+  // find range of stripped, os-number element, if any
+  const numberOpen = ranges?.findIndex(r => treeNode.title.substring(r[0], r[1]).includes('os-number'));
+  const sectionNumber = ranges && numberOpen !== undefined && numberOpen > -1
+    ? treeNode.title.substring(ranges[numberOpen][1], ranges[numberOpen+1][0])
+    : undefined;
 
   const {archivePath, bookVersion} = await getArchiveInfo(bookId);
   const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}:${pageId}.json`;
@@ -188,8 +198,9 @@ const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) =
     orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
     id: pageId,
     type: 'book:page' as const,
+    sectionNumber,
     title: archiveData.title as string,
-    contextTitle: `${bookData.title} / ${archiveData.title}`,
+    contextTitle: `${bookData.title} / ${contextTitle}`,
     book: bookData,
     slug: archiveData.slug as string,
     urls: {
