@@ -1,4 +1,4 @@
-import asyncPool from 'tiny-async-pool';
+import asyncPool from 'tiny-async-pool/lib/es6';
 import { patterns } from './ornPatterns';
 
 export const locate = async (orn: string) => {

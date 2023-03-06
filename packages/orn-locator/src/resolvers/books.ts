@@ -1,6 +1,6 @@
 import memoize from 'lodash/fp/memoize';
 import { stripHtml } from 'string-strip-html';
-import asyncPool from 'tiny-async-pool';
+import asyncPool from 'tiny-async-pool/lib/es6';
 import { isResourceOrContentOfTypeFilter, locateAll } from '..';
 import { fetch } from '../utils/browsersafe-fetch';
 
