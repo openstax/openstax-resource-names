@@ -13,7 +13,7 @@ export const locate = async (orn: string) => {
   return {type: 'not-found', orn} as const;
 };
 
-export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: number} = {}): Promise<Awaited<ReturnType<typeof locate>>[]> => {
+export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: number} = {}): Promise<AnyOrnLocateResponse[]> => {
   return await asyncPool(concurrency, orn, locate);
 };
 
