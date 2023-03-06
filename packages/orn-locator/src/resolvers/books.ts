@@ -28,7 +28,7 @@ export const library = async(language: string) => {
     .filter(([, config]: [any, any]) => config.retired !== true)
     .map(([id]) => id);
 
-  const contents: Awaited<ReturnType<typeof book>>[] = (await asyncPool(2, bookIds, book)).filter(book => 
+  const contents: Book[] = (await asyncPool(2, bookIds, book)).filter((book: Book) => 
     (language === 'all' || book.language === language) && book.state === 'live'
   );
 
@@ -86,6 +86,8 @@ const commonBook = memoize(async(id: string) => {
   };
 });
 
+type Book = Awaited<ReturnType<typeof commonBook>>['book'];
+
 export const book = async(id: string) => {
   return (await commonBook(id)).book;
 };
@@ -138,6 +140,8 @@ const findTreeNode = (predicate: (tree: any) => boolean, tree: any): any => {
     }
   }
 };
+
+type BookDetail = Awaited<ReturnType<typeof bookDetail>>;
 
 export const bookDetail = memoize(async(id: string) => {
   const {archiveData, book} = await commonBook(id);
@@ -260,7 +264,7 @@ const memoryTreeSearch = (getScore: (node: any) => number) => (node: any): Array
 
   return score > 0 ? [{node, score}, ...contents] : contents;
 };
-export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof book>>[]> => {
+export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<BookDetail[]> => {
   const scopes = 'scope' in filters
     ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
       .filter(isResourceOrContentOfTypeFilter(['library']))
