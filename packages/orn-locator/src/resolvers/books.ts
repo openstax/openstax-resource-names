@@ -28,7 +28,7 @@ export const library = async(language: string) => {
     .filter(([, config]: [any, any]) => config.retired !== true)
     .map(([id]) => id);
 
-  const contents: Book[] = (await asyncPool(2, bookIds, book)).filter((book: Book) => 
+  const contents: Book[] = (await asyncPool(2, bookIds, book)).filter((book: Book) =>
     (language === 'all' || book.language === language) && book.state === 'live'
   );
 
@@ -92,9 +92,9 @@ export const book = async(id: string) => {
   return (await commonBook(id)).book;
 };
 
-type TreePageElement = {id: string; title: string; orn: string; type: 'book:page'; slug: string};
+type TreePageElement = {id: string; title: string; orn: string; type: 'book:page'; slug: string; tocType: string; tocTargetType: string};
 type TreeElement = TreePageElement
-  | {id: string; title: string; orn: string; type: 'book:subbook'; contents: TreeElement[]; default_page: undefined | TreePageElement};
+  | {id: string; title: string; orn: string; type: 'book:subbook'; contents: TreeElement[]; default_page: undefined | TreePageElement; tocType: string};
 
 const mapTree = (bookId: string) => (tree: any): TreeElement => {
   if (tree.contents) {
@@ -107,6 +107,7 @@ const mapTree = (bookId: string) => (tree: any): TreeElement => {
       contents: tree.contents.map(mapTree(bookId)),
       orn: `https://openstax.org/orn/book:subbook/${bookId}:${subTreeId}`,
       type: 'book:subbook',
+      tocType: (tree['data-toc-type'] ?? tree['toc_type']) as string,
     };
   } else {
     const pageId = tree.id.split('@')[0];
@@ -115,7 +116,9 @@ const mapTree = (bookId: string) => (tree: any): TreeElement => {
       title: tree.title,
       orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
       slug: tree.slug,
-      type: 'book:page'
+      type: 'book:page',
+      tocType: (tree['data-toc-type'] ?? tree['toc_type']) as string,
+      tocTargetType: (tree['data-toc-target-type'] ?? tree['toc_target_type']) as string,
     };
   }
 };
@@ -237,7 +240,8 @@ export const element = async({bookId, pageId, elementId}: {bookId: string; pageI
 export const elementSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof element>>[]> => {
   const scopes = 'scope' in filters
     ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
-      .filter(isResourceOrContentOfTypeFilter(['book'])).map(book => book.id)
+      .filter(isResourceOrContentOfTypeFilter(['book']))
+      .map(book => book.id)
     : (await library('all')).contents.map(book => book.id);
 
   const books = await Promise.all(scopes.map(async bookId => {
@@ -300,7 +304,7 @@ const parseSearchQuery = (query: string, filterTypes: string[]) => {
   const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]).filter(word => word.length > 3);
 
   const getScore = (node: any) => {
-    const text = 'title' in node ? node.title : '';
+    const text = 'contextTitle' in node ? node.contextTitle : 'title' in node ? node.title : '';
     let score = 0;
 
     if (!filterTypes.includes(node.type)) {
