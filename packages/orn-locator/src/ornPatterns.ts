@@ -38,6 +38,7 @@ export const patterns = {
     name: 'Elements',
     pattern: 'https\\://openstax.org/orn/book\\:page\\:element/:bookId\\::pageId\\::elementId',
     resolve: (params: {bookId: string; pageId: string; elementId: string}) => import('./resolvers/books').then(mod => mod.element(params)),
+    search: (...args) => import('./resolvers/books').then(mod => mod.elementSearch(...args))
   }),
 };
 

@@ -10,5 +10,5 @@ module.exports = {
     },
     // prevent error: `Uncaught ReferenceError: self is not define`
     globalObject: 'this',
-  },
+  }
 };

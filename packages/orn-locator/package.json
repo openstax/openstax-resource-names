@@ -1,10 +1,15 @@
 {
   "name": "@openstax/orn-locator",
-  "version": "1.1.0",
-  "main": "dist/index.js",
+  "version": "1.1.11",
+  "main": "dist/nodejs.js",
+  "browser": "dist/browser.js",
   "types": "index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "node": "./dist/nodejs.js",
+      "browser": "./dist/browser.js",
+      "default": "./dist/index.js"
+    },
     "./": "./dist/"
   },
   "files": [
@@ -35,13 +40,16 @@
   "dependencies": {
     "lodash": "^4.17.21",
     "node-fetch": "^2",
-    "path-to-regexp": "^6.2.0"
+    "path-to-regexp": "^6.2.0",
+    "string-strip-html": "8.4.0",
+    "tiny-async-pool": "1"
   },
   "devDependencies": {
     "@types/jest": "^27.4.1",
     "@types/lodash": "^4.14.186",
     "@types/node": "^17.0.35",
     "@types/node-fetch": "^2.6.2",
+    "@types/tiny-async-pool": "1",
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",
     "cspell": "^6.12.0",

@@ -1,3 +1,4 @@
+import asyncPool from 'tiny-async-pool/lib/es6';
 import { patterns } from './ornPatterns';
 
 export const locate = async (orn: string) => {
@@ -12,8 +13,8 @@ export const locate = async (orn: string) => {
   return {type: 'not-found', orn} as const;
 };
 
-export const locateAll = (orn: string[]) => {
-  return Promise.all(orn.map(locate));
+export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: number} = {}): Promise<AnyOrnLocateResponse[]> => {
+  return await asyncPool(concurrency, orn, locate);
 };
 
 export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}) => {
