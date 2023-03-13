@@ -71,6 +71,11 @@ const commonBook = memoize(async(id: string) => {
       slug: oswebData.meta.slug as string,
       default_page: default_page ? mapTree(id)(default_page) : undefined,
       theme: oswebData.cover_color as string,
+      license: {
+        holder: 'OpenStax',
+        name: archiveData.license.name,
+        url: archiveData.license.url,
+      },
       urls: {
         main: oswebData.meta.html_url as string,
         information: oswebData.meta.html_url as string,
@@ -137,9 +142,10 @@ const findTreeNode = (predicate: (tree: any) => boolean, tree: any): any => {
   }
 
   for (const node of (tree.contents || [])) {
-    const result = findTreeNode(predicate, node);
+    const withParent = {...node, parent: tree};
+    const result = findTreeNode(predicate, withParent);
     if (result) {
-      return result;
+      return {...result, parent: withParent};
     }
   }
 };
@@ -177,6 +183,15 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
   };
 };
 
+const recursiveContextTitle = (node: any): string[] => {
+  const parsed = stripHtml(node.title);
+  if (node.parent) {
+    return [...recursiveContextTitle(node.parent), parsed.result.replace(/\s+/g, ' ')];
+  } else {
+    return [parsed.result];
+  }
+};
+
 const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) => {
   const {archiveData: archiveBook, book: bookData} = await commonBook(bookId);
   const treeNode = findTreeNodeById(pageId, archiveBook.tree);
@@ -204,6 +219,7 @@ const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) =
     sectionNumber,
     title: archiveData.title as string,
     contextTitle: `${bookData.title} / ${contextTitle}`,
+    contextTitles: recursiveContextTitle(treeNode),
     book: bookData,
     slug: archiveData.slug as string,
     urls: {
@@ -304,7 +320,7 @@ const parseSearchQuery = (query: string, filterTypes: string[]) => {
   const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]).filter(word => word.length > 3);
 
   const getScore = (node: any) => {
-    const text = 'contextTitle' in node ? node.contextTitle : 'title' in node ? node.title : '';
+    const text = 'contextTitles' in node ? node.contextTitles.join(' ') : 'title' in node ? node.title : '';
     let score = 0;
 
     if (!filterTypes.includes(node.type)) {
