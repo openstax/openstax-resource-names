@@ -145,7 +145,7 @@ const findTreeNode = (predicate: (tree: any) => boolean, tree: any): any => {
     const withParent = {...node, parent: tree};
     const result = findTreeNode(predicate, withParent);
     if (result) {
-      return {...result, parent: withParent};
+      return result;
     }
   }
 };
