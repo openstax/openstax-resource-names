@@ -1,10 +1,9 @@
-import {findOne, textContent} from 'domutils';
-import {parseDocument} from 'htmlparser2';
 import memoize from 'lodash/fp/memoize';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { filterResourceContents, isResourceOrContentOfTypeFilter, locateAll } from '..';
 import { patterns } from '../ornPatterns';
 import { fetch } from '../utils/browsersafe-fetch';
+import { titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
 const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url';
@@ -199,20 +198,7 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
 };
 
 const recursiveContextTitle = (node: any): {title: string; number: string | null; shortTitle: string | null}[] => {
-  const titleDoc = parseDocument(node.title);
-
-  const numberElement = findOne(node => node.attribs.class === 'os-number', titleDoc.children);
-  const numberPart = numberElement && textContent(numberElement);
-  const shortTitleElement = findOne(node => node.attribs.class === 'os-text', titleDoc.children);
-  const shortTitle = shortTitleElement && textContent(shortTitleElement);
-
-  const clean = (str: string) => str.replace(/\s+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
-
-  const item = {
-    title: clean(textContent(titleDoc)),
-    number: numberPart ? clean(numberPart) : numberPart,
-    shortTitle: shortTitle ? clean(shortTitle) : shortTitle,
-  };
+  const item = titleSplit(node.title);
 
   if (node.parent) {
     return [...recursiveContextTitle(node.parent), item];
