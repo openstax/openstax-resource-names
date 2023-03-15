@@ -1,7 +1,9 @@
+import {findOne, textContent} from 'domutils';
+import {parseDocument} from 'htmlparser2';
 import memoize from 'lodash/fp/memoize';
-import { stripHtml } from 'string-strip-html';
 import asyncPool from 'tiny-async-pool/lib/es6';
-import { isResourceOrContentOfTypeFilter, locateAll } from '..';
+import { filterResourceContents, isResourceOrContentOfTypeFilter, locateAll } from '..';
+import { patterns } from '../ornPatterns';
 import { fetch } from '../utils/browsersafe-fetch';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
@@ -22,12 +24,15 @@ const getArchiveInfo = memoize(async (bookId: string) => {
   };
 });
 
-export const library = async(language: string) => {
+const getBookIds = async () => {
   const releaseJson = await getReleaseJson();
-  const bookIds = Object.entries(releaseJson.books)
+  return Object.entries(releaseJson.books)
     .filter(([, config]: [any, any]) => config.retired !== true)
     .map(([id]) => id);
+};
 
+export const library = async(language: string) => {
+  const bookIds = await getBookIds();
   const contents: Book[] = (await asyncPool(2, bookIds, book)).filter((book: Book) =>
     (language === 'all' || book.language === language) && book.state === 'live'
   );
@@ -44,17 +49,20 @@ export const library = async(language: string) => {
   };
 };
 
+const archiveBook = memoize(async(id: string) => {
+  const {archivePath, bookVersion} = await getArchiveInfo(id);
+  const archiveUrl = `https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`;
+  return fetch(archiveUrl)
+    .then(response => response.json());
+});
+
 const commonBook = memoize(async(id: string) => {
   const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
     .then(response => response.json() as any)
     .then(data => data.items[0])
   ;
 
-  const {archivePath, bookVersion} = await getArchiveInfo(id);
-  const archiveUrl = `https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`;
-  const archiveData = await fetch(archiveUrl)
-    .then(response => response.json());
-
+  const archiveData = await archiveBook(id);
   const default_page_slug = oswebData.webview_rex_link.match(/\/books\/.*\/pages\/(.*)$/)?.[1] as string;
   const default_page = default_page_slug && findTreeNodeBySlug(default_page_slug, archiveData.tree);
 
@@ -152,14 +160,21 @@ const findTreeNode = (predicate: (tree: any) => boolean, tree: any): any => {
 
 type BookDetail = Awaited<ReturnType<typeof bookDetail>>;
 
-export const bookDetail = memoize(async(id: string) => {
-  const {archiveData, book} = await commonBook(id);
+const bookDetailAndFriends = memoize(async(id: string) => {
+  const friends = await commonBook(id);
 
   return {
-    ...book,
-    contents: (archiveData.tree.contents as any[]).map(mapTree(id)),
+    ...friends,
+    book: {
+      ...friends.book,
+      contents: (friends.archiveData.tree.contents as any[]).map(mapTree(id)),
+    }
   };
 });
+
+export const bookDetail = (id: string) => {
+  return bookDetailAndFriends(id).then(result => result.book);
+};
 
 export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: string}) => {
   const bookData = await book(bookId);
@@ -183,26 +198,53 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
   };
 };
 
-const recursiveContextTitle = (node: any): string[] => {
-  const parsed = stripHtml(node.title);
+const recursiveContextTitle = (node: any): {title: string; number: string | null; shortTitle: string | null}[] => {
+  const titleDoc = parseDocument(node.title);
+
+  const numberElement = findOne(node => node.attribs.class === 'os-number', titleDoc.children);
+  const numberPart = numberElement && textContent(numberElement);
+  const shortTitleElement = findOne(node => node.attribs.class === 'os-text', titleDoc.children);
+  const shortTitle = shortTitleElement && textContent(shortTitleElement);
+
+  const clean = (str: string) => str.replace(/\s+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
+
+  const item = {
+    title: clean(textContent(titleDoc)),
+    number: numberPart ? clean(numberPart) : numberPart,
+    shortTitle: shortTitle ? clean(shortTitle) : shortTitle,
+  };
+
   if (node.parent) {
-    return [...recursiveContextTitle(node.parent), parsed.result.replace(/\s+/g, ' ')];
+    return [...recursiveContextTitle(node.parent), item];
   } else {
-    return [parsed.result];
+    return [item];
   }
+};
+
+const syncPageNodeData = (page: any, archiveBook: any) => {
+  const pageId = page.id.split('@')[0];
+  const bookId = archiveBook.id;
+  const treeNode = findTreeNodeById(pageId, archiveBook.tree);
+
+  const contextTitles = recursiveContextTitle(treeNode);
+  const thisContext = contextTitles.slice(-1)[0];
+
+  return {
+    orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
+    id: pageId,
+    type: 'book:page' as const,
+    sectionNumber: thisContext.number,
+    contextTitle: [
+      ...contextTitles.slice(0, -1).map(item => item.number || item.title),
+      thisContext.title
+    ].join(' / '),
+    contextTitles: contextTitles.map(item => item.title),
+  };
 };
 
 const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) => {
   const {archiveData: archiveBook, book: bookData} = await commonBook(bookId);
   const treeNode = findTreeNodeById(pageId, archiveBook.tree);
-
-  const {result: contextTitle, ranges} = stripHtml(treeNode.title);
-
-  // find range of stripped, os-number element, if any
-  const numberOpen = ranges?.findIndex(r => treeNode.title.substring(r[0], r[1]).includes('os-number'));
-  const sectionNumber = ranges && numberOpen !== undefined && numberOpen > -1
-    ? treeNode.title.substring(ranges[numberOpen][1], ranges[numberOpen+1][0])
-    : undefined;
 
   const {archivePath, bookVersion} = await getArchiveInfo(bookId);
   const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}:${pageId}.json`;
@@ -213,13 +255,8 @@ const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) =
   const rexUrl = `https://openstax.org/books/${bookData.slug}/pages/${archiveData.slug}`;
 
   return [bookData, archiveData, {
-    orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
-    id: pageId,
-    type: 'book:page' as const,
-    sectionNumber,
+    ...syncPageNodeData(treeNode, archiveBook),
     title: archiveData.title as string,
-    contextTitle: `${bookData.title} / ${contextTitle}`,
-    contextTitles: recursiveContextTitle(treeNode),
     book: bookData,
     slug: archiveData.slug as string,
     urls: {
@@ -277,64 +314,89 @@ export const elementSearch = async(query: string, limit: number, filters: {[key:
     })));
 };
 
-const memoryTreeSearch = (getScore: (node: any) => number) => (node: any): Array<{node: any; score: number}> => {
-  const score = getScore(node);
-  const contents = ('contents' in node ? node.contents.map(memoryTreeSearch(getScore)) : [])
-    .reduce((result: any[], item: any[]) => [...result, ...item], []);
-
-  return score > 0 ? [{node, score}, ...contents] : contents;
-};
 export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<BookDetail[]> => {
-  const scopes = 'scope' in filters
-    ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
-      .filter(isResourceOrContentOfTypeFilter(['library']))
-    : [await library('all')];
+  const bookIds = 'scope' in filters
+    ? (typeof filters.scope === 'string' ? [filters.scope] : filters.scope)
+      .map(bookOrn => {
+        const match = patterns.book.match(bookOrn);
+        if (match) {
+          return match.params.id;
+        }
 
-  return doSearch(query, ['book'], limit)(scopes);
+        return undefined;
+      })
+      .filter(<X>(x: X): x is X & Exclude<undefined, X> => x !== undefined)
+    : await getBookIds();
+
+
+  return Promise.all(bookIds.map(book))
+    .then(doSearch(query, limit));
 };
 export const pageSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
-  const scopes = 'scope' in filters
-    ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
-      .filter(isResourceOrContentOfTypeFilter(['book'])).map(book => book.id)
-    : (await library('all')).contents.map(book => book.id);
+  const bookIds = 'scope' in filters
+    ? (typeof filters.scope === 'string' ? [filters.scope] : filters.scope)
+      .map(bookOrn => {
+        const match = patterns.book.match(bookOrn);
+        if (match) {
+          return match.params.id;
+        }
 
-  return await Promise.all(scopes.map(bookDetail))
-    .then(doSearch(query, ['book:page'], limit))
-  ;
+        return undefined;
+      })
+      .filter(<X>(x: X): x is X & Exclude<undefined, X> => x !== undefined)
+    : await getBookIds();
+
+
+  return Promise.all(bookIds.map(bookDetailAndFriends))
+    .then(results => results.map(({archiveData: archiveBook, book}) => {
+      const pages = filterResourceContents(book, ['book:page']);
+      return pages.map(page => ({...page, ...syncPageNodeData(page, archiveBook)}));
+    }))
+    .then(results => results.flat())
+    .then(doSearch(query, limit));
 };
 
-const doSearch = (query: string, filterTypes: string[], limit: number) => (inputs: any[]): Promise<any[]> => {
-  const results = inputs.map(memoryTreeSearch(parseSearchQuery(query, filterTypes)))
-    .reduce((result, item) => [...result, ...item], []);
+const doSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
+  const getScore = parseSearchQuery(query);
+  const results = inputs.map(node => ({node, score: getScore(node)}));
 
   results.sort((a, b) => b.score - a.score);
+
   return locateAll(
     results
       .slice(0, limit)
       .map(result => result.node.orn)
   );
 };
-const parseSearchQuery = (query: string, filterTypes: string[]) => {
+const parseSearchQuery = (query: string) => {
   const quotedTerms = [...query.matchAll(/"([^"]+)"/g)].map(match => match[1]);
-  const commaSeparatedPhrases = [...query.replace('"', '').matchAll(/([^,]+)/g)].map(match => match[1]);
-  const words = [...query.replace('"', '').matchAll(/([^ ]+)/g)].map(match => match[1]).filter(word => word.length > 3);
+
+  const words = [...quotedTerms
+    .reduce((result, quoted) => result.replace(`"${quoted}"`, ''), query)
+    .matchAll(/([^ ]+)/g)]
+    .map(match => match[1])
+    .filter(word => word.match(/^\d+$/) || word.length > 3);
 
   const getScore = (node: any) => {
     const text = 'contextTitles' in node ? node.contextTitles.join(' ') : 'title' in node ? node.title : '';
     let score = 0;
 
-    if (!filterTypes.includes(node.type)) {
-      return score;
-    }
-
+    // this matches quoted terms surrounded by word boundaries
     score += (5 * quotedTerms.reduce((result, term) =>
-      result + [...text.matchAll(new RegExp(term, 'ig'))].length, 0
+      result + [...text.matchAll(new RegExp(`\\b${term}\\b`, 'ig'))].length, 0
     ));
-    score += (3 * commaSeparatedPhrases.reduce((result, term) =>
-      result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
+    // this matches quoted terms without word boundaries
+    score += (3 * quotedTerms.reduce((result, term) =>
+      result + [...text.matchAll(new RegExp(`[^\\b\\s]${term}|${term}[^\\b\\s]`, 'ig'))].length, 0
     ));
+    // this matches words with word boundaries
+    score += (2 * words.reduce((result, term) =>
+      result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(`\\b${term}\\b`, 'ig'))].length, 0
+    ));
+    // this matches words without word boundaries
     score += words.reduce((result, term) =>
-      result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(term, 'ig'))].length, 0
+      // eslint-disable-next-line no-useless-escape
+      result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(`[^\\b\\s]${term}|${term}[^\\b\\s]`, 'ig'))].length, 0
     );
 
     return score;
