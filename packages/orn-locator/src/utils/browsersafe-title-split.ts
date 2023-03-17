@@ -30,7 +30,7 @@ export const titleSplit = (html: string) => {
 
     const numberElement = titleDoc.querySelector('.os-number');
     const numberElementClone = numberElement?.cloneNode(true);
-    numberElementClone?.find('.os-part-text')?.remove();
+    numberElementClone?.querySelector('.os-part-text')?.remove();
     const justTheNumber = numberElementClone?.textContent; 
     const numberText = numberElement?.textContent;
     const shortTitleElement = titleDoc.querySelector('.os-text');
