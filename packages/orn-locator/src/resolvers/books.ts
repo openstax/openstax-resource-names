@@ -3,7 +3,7 @@ import asyncPool from 'tiny-async-pool/lib/es6';
 import { filterResourceContents, isResourceOrContentOfTypeFilter, locateAll } from '..';
 import { patterns } from '../ornPatterns';
 import { fetch } from '../utils/browsersafe-fetch';
-import { titleSplit } from '../utils/browsersafe-title-split';
+import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
 const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url';
@@ -104,34 +104,59 @@ export const book = async(id: string) => {
   return (await commonBook(id)).book;
 };
 
-type TreePageElement = {id: string; title: string; orn: string; type: 'book:page'; slug: string; tocType: string; tocTargetType: string};
-type TreeElement = TreePageElement
-  | {id: string; title: string; orn: string; type: 'book:subbook'; contents: TreeElement[]; default_page: undefined | TreePageElement; tocType: string};
+export type TreePageElement = {id: string; title: string; titleParts: TitleParts; orn: string; type: 'book:page'; slug: string; tocType: string; tocTargetType: string};
+export type TreeSubTree = {id: string; title: string; titleParts: TitleParts; orn: string; type: 'book:subbook'; contents: TreeElement[]; default_page: undefined | TreePageElement; tocType: string};
+type TreeElement = TreePageElement | TreeSubTree;
 
-const mapTree = (bookId: string) => (tree: any): TreeElement => {
+
+type TocTypes = {
+  tocType: string;
+  tocTargetType?: string;
+};
+const mapTocType = (tree: any): TocTypes => {
+  const tocTargetType = (tree['data-toc-target-type'] ?? tree['toc_target_type']) as string;
+  return {
+    tocType: (tree['data-toc-type'] ?? tree['toc_type']) as string,
+    ...(tocTargetType ? {tocTargetType} : {}),
+  };
+};
+
+type TreeNodeDataWithoutChildren = TreePageElement | Omit<TreeSubTree, 'contents'>;
+const mapTreeNodeData = (bookId: string) => (tree: any): TreeNodeDataWithoutChildren => {
   if (tree.contents) {
     const subTreeId = tree.id.split('@')[0];
     const default_page = findTreeNode(t => !('contents' in t), tree);
     return {
       id: subTreeId,
       title: tree.title,
+      titleParts: titleSplit(tree.title),
       default_page: default_page ? mapTree(bookId)(default_page) as TreePageElement : undefined,
-      contents: tree.contents.map(mapTree(bookId)),
       orn: `https://openstax.org/orn/book:subbook/${bookId}:${subTreeId}`,
       type: 'book:subbook',
-      tocType: (tree['data-toc-type'] ?? tree['toc_type']) as string,
+      ...mapTocType(tree),
     };
   } else {
     const pageId = tree.id.split('@')[0];
     return {
       id: pageId,
       title: tree.title,
+      titleParts: titleSplit(tree.title),
       orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
       slug: tree.slug,
       type: 'book:page',
-      tocType: (tree['data-toc-type'] ?? tree['toc_type']) as string,
-      tocTargetType: (tree['data-toc-target-type'] ?? tree['toc_target_type']) as string,
-    };
+      ...mapTocType(tree),
+    } as TreePageElement;
+  }
+};
+
+const mapTree = (bookId: string) => (tree: any): TreeElement => {
+  if (tree.contents) {
+    return {
+      ...mapTreeNodeData(bookId)(tree),
+      contents: tree.contents.map(mapTree(bookId)),
+    } as TreeElement;
+  } else {
+    return mapTreeNodeData(bookId)(tree) as TreeElement;
   }
 };
 
@@ -197,13 +222,11 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
   };
 };
 
-const recursiveContextTitle = (node: any): {title: string; number: string | null; shortTitle: string | null}[] => {
-  const item = titleSplit(node.title);
-
+const recursiveContext = (node: any): any[] => {
   if (node.parent) {
-    return [...recursiveContextTitle(node.parent), item];
+    return [...recursiveContext(node.parent), node];
   } else {
-    return [item];
+    return [node];
   }
 };
 
@@ -212,19 +235,19 @@ const syncPageNodeData = (page: any, archiveBook: any) => {
   const bookId = archiveBook.id;
   const treeNode = findTreeNodeById(pageId, archiveBook.tree);
 
-  const contextTitles = recursiveContextTitle(treeNode);
-  const thisContext = contextTitles.slice(-1)[0];
+  const contextNodes = recursiveContext(treeNode).map(mapTreeNodeData(bookId));
+  const thisNodeResult = contextNodes.slice(-1)[0];
 
   return {
-    orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
-    id: pageId,
-    type: 'book:page' as const,
-    sectionNumber: thisContext.number,
+    ...thisNodeResult,
+    context: contextNodes
+      .filter(context => context.tocType && context.id !== pageId)
+      .reduce((result, item) => ({...result, [item.tocType]: item}), {} as {[key: string]: TreeNodeDataWithoutChildren}),
     contextTitle: [
-      ...contextTitles.slice(0, -1).map(item => item.number || item.title),
-      thisContext.title
+      ...contextNodes.slice(0, -1).map(item => item.titleParts.numberText || item.titleParts.title),
+      thisNodeResult.titleParts.title
     ].join(' / '),
-    contextTitles: contextTitles.map(item => item.title),
+    contextTitles: contextNodes.map(item => item.titleParts.title),
   };
 };
 
