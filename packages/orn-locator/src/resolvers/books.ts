@@ -37,7 +37,7 @@ const libraries = [
   'pl',
 ];
 
-export type LibraryData = ReturnType<typeof library>;
+export type LibraryData = Awaited<ReturnType<typeof library>>;
 
 const libraryData = (language: string) => {
   return {
