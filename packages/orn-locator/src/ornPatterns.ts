@@ -14,8 +14,9 @@ const makePattern = <P extends object, R>({pattern, ...parts}: {
 export const patterns = {
   library: makePattern({
     name: 'Libraries',
-    pattern: 'https\\://openstax.org/orn/library/:lang',
+    pattern: 'https\\://openstax.org/orn/library/:lang?',
     resolve: ({lang}: {lang: string}) => import('./resolvers/books').then(mod => mod.library(lang)),
+    search: (...args) => import('./resolvers/books').then(mod => mod.librarySearch(...args))
   }),
   book: makePattern({
     name: 'Books',
