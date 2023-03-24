@@ -1,8 +1,8 @@
+import fetch from 'cross-fetch';
 import memoize from 'lodash/fp/memoize';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { filterResourceContents, isResourceOrContentOfTypeFilter, locateAll } from '..';
 import { patterns } from '../ornPatterns';
-import { fetch } from '../utils/browsersafe-fetch';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
@@ -30,20 +30,35 @@ const getBookIds = async () => {
     .map(([id]) => id);
 };
 
-export const library = async(language: string) => {
+const libraries = [
+  'all',
+  'en', 
+  'es',
+  'pl',
+];
+
+export type LibraryData = ReturnType<typeof libraryData>;
+
+const libraryData = (language: string) => {
+  return {
+    id: `library/${language}`,
+    orn: `https://openstax.org/orn/library/${language}`,
+    type: 'library' as const,
+    title: 'OpenStax Textbooks' + (language !== 'all' ? ` (${new Intl.DisplayNames(['en'], {type: 'language'}).of(language)})` : ''),
+    urls: {
+      main: 'https://openstax.org/subjects'
+    },
+  };
+};
+
+export const library = async(language: string = 'all') => {
   const bookIds = await getBookIds();
   const contents: Book[] = (await asyncPool(2, bookIds, book)).filter((book: Book) =>
     (language === 'all' || book.language === language) && book.state === 'live'
   );
 
   return {
-    id: 'library',
-    orn: 'https://openstax.org/orn/library',
-    type: 'library' as const,
-    title: 'OpenStax Textbooks',
-    urls: {
-      main: 'https://openstax.org/subjects'
-    },
+    ...libraryData(language),
     contents,
   };
 };
@@ -322,7 +337,9 @@ export const elementSearch = async(query: string, limit: number, filters: {[key:
       return element({bookId, pageId, elementId});
     })));
 };
-
+export const librarySearch = async(query: string, limit: number, _filters: {[key: string]: string | string[]} = {}): Promise<LibraryData[]> => {
+  return doSearch(query, limit)(libraries.map(libraryData));
+};
 export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<BookDetail[]> => {
   const bookIds = 'scope' in filters
     ? (typeof filters.scope === 'string' ? [filters.scope] : filters.scope)
@@ -367,7 +384,8 @@ export const pageSearch = async(query: string, limit: number, filters: {[key: st
 
 const doSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
   const getScore = parseSearchQuery(query);
-  const results = inputs.map(node => ({node, score: getScore(node)}));
+  const results = inputs.map(node => ({node, score: getScore(node)}))
+    .filter(r => r.score > 0);
 
   results.sort((a, b) => b.score - a.score);
 
