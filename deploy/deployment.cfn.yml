@@ -1,0 +1,501 @@
+
+Parameters:
+
+  ApiCodeKey:
+    Description: S3 key of zip with api function code
+    Type: String
+
+  Application:
+    Description: This application's lower-case name, e.g. "project-template"
+    Type: String
+
+  CodeBucket:
+    Description: S3 bucket with lambda function code
+    Type: String
+
+  EnvName:
+    Description: Which environment this is, e.g. "dev"
+    Type: String
+
+  ReactAppConfigExampleMessage:
+    Description: Test message to be displayed by the frontend via the frontend config
+    Type: String
+
+  ReplicaBucketWebsiteURL:
+    Type: String
+
+Conditions:
+  # Lambda@Edge functions need to be created in us-east-1; there might be a way
+  # to set up other resources in other regions using StackSets, but for now force
+  # the region with this condition, in case one day we add Lambda@Edge
+  WrongRegion: !Not [!Equals [!Ref 'AWS::Region', us-east-1]]
+
+  IsProduction: !Or
+    - !Equals [!Ref EnvName, prod]
+    - !Equals [!Ref EnvName, production]
+
+Resources:
+  # ==============
+  # Region validation
+  # ==============
+  YouAreInTheWrongRegion:
+    Type: "AWS::SSM::Parameter"
+    Condition: WrongRegion
+    Properties:
+      Name: '' # Leave name empty to force a fail
+      Type: String
+      Value: ''
+  # ==============
+  # route53
+  # ==============
+  Dns:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub
+      - ${zoneName}.
+      - zoneName:
+          Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
+      RecordSets:
+        - Name: !Sub
+          - ${subDomain}${baseDomain}
+          - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
+            baseDomain:
+              Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2 # Indicates CloudFront
+            DNSName: !GetAtt Distribution.DomainName
+  # ==============
+  # dynamo table
+  # ==============
+  ExampleTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: id
+          AttributeType: S
+        -
+          AttributeName: timestamp
+          AttributeType: N
+      BillingMode: PAY_PER_REQUEST
+      DeletionProtectionEnabled: !If [IsProduction, true, false]
+      KeySchema:
+        -
+          AttributeName: id
+          KeyType: HASH
+        -
+          AttributeName: timestamp
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !If [IsProduction, true, false]
+
+  # ==============
+  # Lambda stuff
+  # ==============
+
+  apiLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref CodeBucket
+        S3Key: !Ref ApiCodeKey
+      FunctionName: !Sub ${AWS::StackName}-api-lambda # this must be consistent with log group name
+      Handler: index.handler
+      Layers:
+        - arn:aws:lambda:us-east-1:177933569100:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
+      MemorySize: 128
+      Timeout: 30 # logging stacktraces is surprisingly heavy
+      Role: !GetAtt lambdaIAMRole.Arn
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          API_HOST: !Sub
+            - ${subDomain}${baseDomain}
+            - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
+              baseDomain:
+                Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
+          UI_HOST: !Sub
+            - ${subDomain}${baseDomain}
+            - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
+              baseDomain:
+                Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
+          EXAMPLE_TABLE_NAME: !Ref ExampleTable
+          ENV_NAME: !Ref EnvName
+          REACT_APP_CONFIG_EXAMPLE_MESSAGE: !Ref ReactAppConfigExampleMessage
+
+  apiLambdaUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt apiLambdaFunction.Arn
+
+  apiLambdaInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunctionUrl
+      FunctionName: !GetAtt apiLambdaFunction.Arn
+      FunctionUrlAuthType: NONE
+      Principal: '*'
+
+  lambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: dynamo-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Batch*
+                  - dynamodb:Describe*
+                  - dynamodb:Get*
+                  - dynamodb:Put*
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt ExampleTable.Arn
+        - PolicyName: logs
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Resource:
+                - !GetAtt lambdaLogGroup.Arn
+                - !Select [0, !Split [':*', !GetAtt lambdaLogGroup.Arn ]]
+        - PolicyName: params
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub >-
+                  arn:aws:ssm:${AWS::Region}:${AWS::AccountId
+                  }:parameter/${Application}/${EnvName}/api/*
+
+  lambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-api-lambda # this must be consistent with lambda name
+      RetentionInDays: 14
+
+  RequestTimeoutMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref lambdaLogGroup
+      FilterPattern: "Task timed out after"
+      MetricTransformations:
+        - MetricValue: 1
+          DefaultValue: 0 # idk if this is doing anything, it doesn't seem to add 0s if there are no log records for the period
+          MetricNamespace: !Sub ${Application}/${AWS::StackName}
+          MetricName: Request Timeouts
+
+  RequestTimeoutAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Application}/${AWS::StackName}-request-timeout
+      AlarmActions:
+        - Fn::ImportValue: !Sub
+            - ${Application}-shared-sns-${Type}-topic-arn
+            - Type: !If
+              - IsProduction
+              - anytime
+              - workday
+      OKActions:
+        - Fn::ImportValue: !Sub
+            - ${Application}-shared-sns-${Type}-topic-arn
+            - Type: !If
+              - IsProduction
+              - anytime
+              - workday
+      MetricName: Request Timeouts
+      Namespace: !Sub ${Application}/${AWS::StackName}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: '1'
+      Period: '60'
+      Statistic: Sum
+      Threshold: '1'
+      TreatMissingData: notBreaching # if you set this to `breaching`, the alarm goes off if there is no api traffic
+
+  ErrorMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref lambdaLogGroup
+      FilterPattern: '{ $.eventType = "ERROR" }'
+      MetricTransformations:
+        - MetricValue: 1
+          DefaultValue: 0 # idk if this is doing anything, it doesn't seem to add 0s if there are no log records for the period
+          MetricNamespace: !Sub ${Application}/${AWS::StackName}
+          MetricName: Errors
+
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Application}/${AWS::StackName}-error
+      AlarmActions:
+        - Fn::ImportValue: !Sub
+            - ${Application}-shared-sns-${Type}-topic-arn
+            - Type: !If
+              - IsProduction
+              - anytime
+              - workday
+      OKActions:
+        - Fn::ImportValue: !Sub
+            - ${Application}-shared-sns-${Type}-topic-arn
+            - Type: !If
+              - IsProduction
+              - anytime
+              - workday
+      MetricName: Errors
+      Namespace: !Sub ${Application}/${AWS::StackName}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: '1'
+      Period: '60'
+      Statistic: Sum
+      Threshold: '1'
+      TreatMissingData: notBreaching # if you set this to `breaching`, the alarm goes off if there is no api traffic
+
+  # ==============
+  # static frontend S3 / Cloudfront
+  # ==============
+  ReplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [s3.amazonaws.com]
+
+  ReplicationPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:Get*
+          - s3:ListBucket
+          Resource:
+          - !Sub arn:aws:s3:::${AWS::StackName}-ui-primary-bucket
+          - !Sub arn:aws:s3:::${AWS::StackName}-ui-primary-bucket/*
+          Effect: 'Allow'
+        - Action:
+          - s3:ReplicateObject
+          - s3:ReplicateDelete
+          - s3:ReplicateTags
+          - s3:GetObjectVersionTagging
+          Effect: 'Allow'
+          Resource: !Sub arn:aws:s3:::${AWS::StackName}-ui-replica-bucket/*
+      PolicyName: ReplicationPolicy
+      Roles: [!Ref 'ReplicationRole']
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-ui-primary-bucket
+      ReplicationConfiguration:
+        Role: !GetAtt [ReplicationRole, Arn]
+        Rules:
+        - Destination:
+            Bucket: !Sub arn:aws:s3:::${AWS::StackName}-ui-replica-bucket
+            StorageClass: STANDARD
+          Id: Backup
+          Prefix: ''
+          Status: Enabled
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: MustHaveVersioningButDoNotWantOldVersions
+            NoncurrentVersionExpirationInDays: 1
+            Status: "Enabled"
+      WebsiteConfiguration:
+        IndexDocument: "doesnt-exist.html"
+      AccessControl: PublicRead
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub arn:aws:s3:::${AWS::StackName}-ui-primary-bucket/*
+      Bucket: !Ref Bucket
+
+  RewriteFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      AutoPublish: true
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+
+          request.uri = '/build/index.html';
+
+          return request;
+        }
+      FunctionConfig:
+        Comment: Rewrites all request paths to /build/index.html
+        Runtime: cloudfront-js-1.0
+      Name: !Sub ${AWS::StackName}-rewriteFunction
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        HttpVersion: 'http2'
+        Enabled: 'true'
+        DefaultRootObject: /build/index.html
+        Aliases:
+          - !Sub
+            - ${subDomain}${baseDomain}
+            - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
+              baseDomain:
+                Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
+
+        ViewerCertificate:
+          AcmCertificateArn:
+            Fn::ImportValue: !Sub subdomain-${Application}-ssl-cert-arn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2019
+
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: ApiOrigin
+            AllowedMethods:
+              - GET
+              - HEAD
+              - DELETE
+              - POST
+              - OPTIONS
+              - PUT
+              - PATCH
+            Compress: 'true'
+            DefaultTTL: 0
+            MaxTTL: 0
+            MinTTL: 0
+            ForwardedValues:
+              Headers:
+                - Authorization
+              Cookies:
+                Forward: all
+              QueryString: 'true'
+            ViewerProtocolPolicy: redirect-to-https
+
+          - PathPattern: /build/*
+            TargetOriginId: StaticOrigin
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            Compress: 'true'
+            DefaultTTL: 31536000
+            MaxTTL: 31536000
+            MinTTL: 31536000
+            ForwardedValues:
+              Cookies:
+                Forward: none
+              QueryString: 'false'
+            ViewerProtocolPolicy: redirect-to-https
+
+        # This cache behavior always serves /build/index.html
+        DefaultCacheBehavior:
+          TargetOriginId: StaticOrigin
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          Compress: 'true'
+          DefaultTTL: 31536000
+          MaxTTL: 31536000
+          MinTTL: 31536000
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: 'false'
+          ViewerProtocolPolicy: redirect-to-https
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt RewriteFunction.FunctionMetadata.FunctionARN
+
+        Origins:
+          - Id: ApiOrigin
+            DomainName: !Select [0, !Split ["/", !Select [1, !Split ["://", !GetAtt apiLambdaUrl.FunctionUrl]]]]
+            CustomOriginConfig:
+              OriginKeepaliveTimeout: 5
+              OriginReadTimeout: 60
+              OriginProtocolPolicy: https-only
+
+          - Id: StaticPrimaryOrigin
+            DomainName: !Select [1, !Split ["://", !GetAtt Bucket.WebsiteURL]]
+            CustomOriginConfig:
+              OriginKeepaliveTimeout: 5
+              OriginReadTimeout: 60
+              OriginProtocolPolicy: http-only
+
+          - Id: StaticReplicaOrigin
+            DomainName: !Select [1, !Split ["://", !Ref ReplicaBucketWebsiteURL]]
+            CustomOriginConfig:
+              OriginKeepaliveTimeout: 5
+              OriginReadTimeout: 60
+              OriginProtocolPolicy: http-only
+
+        OriginGroups:
+          Quantity: 1
+          Items:
+            - Id: StaticOrigin
+              FailoverCriteria:
+                StatusCodes:
+                  Items: [ 500, 502, 503, 504, 403, 404 ]
+                  Quantity: 6
+              Members:
+                Items:
+                  - OriginId: StaticPrimaryOrigin
+                  - OriginId: StaticReplicaOrigin
+                Quantity: 2
+
+Outputs:
+  lambdaInvokeURL:
+    Value: !GetAtt apiLambdaUrl.FunctionUrl
+
+  lambdaArn:
+    Value: !GetAtt apiLambdaFunction.Arn
+
+  StaticBucketName:
+    Value: !Ref Bucket
+
+  DistributionId:
+    Value: !Ref Distribution
+
+  DistributionDomainName:
+    Value: !Sub
+      - ${subDomain}${baseDomain}
+      - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
+        baseDomain:
+          Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name

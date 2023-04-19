@@ -1,16 +1,14 @@
 {
   "private": true,
-  "name": "@project/openstax-resource-names",
+  "name": "@project/template",
   "scripts": {
     "ci:spelling": "git ls-files -- . ':!:packages/' | yarn cspell -c ./cspell.json --file-list stdin",
-    "ci:packages": "yarn workspaces run ci",
-    "ci": "CI=true npm-run-all ci:*"
+    "ci:packages": "./scripts/ci.bash",
+    "ci": "CI=true npm-run-all ci:*",
+    "start": "./scripts/start.bash",
+    "build": "./scripts/build.bash"
   },
   "workspaces": [
     "packages/*"
-  ],
-  "devDependencies": {
-    "cspell": "^6.12.0",
-    "npm-run-all": "^4.1.5"
-  }
+  ]
 }
