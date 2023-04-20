@@ -1,8 +1,9 @@
 import fetch from 'cross-fetch';
 import memoize from 'lodash/fp/memoize';
 import asyncPool from 'tiny-async-pool/lib/es6';
-import { filterResourceContents, isResourceOrContentOfTypeFilter, locateAll } from '..';
+import { filterResourceContents, isResourceOrContentOfTypeFilter } from '..';
 import { patterns } from '../ornPatterns';
+import { locateAll } from '../resolve';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';

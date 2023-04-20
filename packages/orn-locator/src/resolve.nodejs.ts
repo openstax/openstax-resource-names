@@ -8,4 +8,4 @@ globalThis.parseDocument = parseDocument;
 globalThis.domutils = domutils;
 globalThis.fetch = nodeFetch;
 
-export * from './';
+export * from './resolve';
