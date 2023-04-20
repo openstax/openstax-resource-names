@@ -75,6 +75,13 @@ if [ -d "$SCRIPT_DIR"/../packages/utils ]; then
 fi
 
 # =======
+# build locator code
+# =======
+cd "$SCRIPT_DIR"/../packages/orn-locator
+
+yarn build:clean && node script/preload-data.js
+
+# =======
 # build api code and upload to code bucket
 # =======
 cd "$SCRIPT_DIR"/../packages/lambda
