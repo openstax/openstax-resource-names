@@ -17,7 +17,7 @@ export const getReleaseJson = memoize(async () => preloadedData('release.json').
   ;
 }));
 
-export const getArchiveInfo = memoize(async (bookId: string) => {
+export const getArchiveInfo = async (bookId: string) => {
   const releaseJson = await getReleaseJson();
   const bookConfig = releaseJson.books[bookId];
 
@@ -25,7 +25,7 @@ export const getArchiveInfo = memoize(async (bookId: string) => {
     archivePath: bookConfig.archiveOverride || releaseJson.archiveUrl,
     bookVersion: bookConfig.defaultVersion,
   };
-});
+};
 
 const getBookIds = async () => {
   const releaseJson = await getReleaseJson();
@@ -70,14 +70,14 @@ export const library = async(language: string = 'all') => {
 export const bookCacheKey = (archivePath: string, id: string, bookVersion: string) =>
   `${archivePath.replace(/^\/apps\/archive\//, '')}-${id}@${bookVersion}.json`;
 
-const archiveBook = memoize(async(id: string) => {
+const archiveBook = async(id: string) => {
   const {archivePath, bookVersion} = await getArchiveInfo(id);
   return preloadedData(bookCacheKey(archivePath, id, bookVersion))
     .catch(() => 
       fetch(`https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`)
         .then(response => response.json())
     );
-});
+};
 
 const commonBook = memoize(async(id: string) => {
   const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
@@ -223,7 +223,7 @@ const findTreePages = (tree: any): any => {
 
 type BookDetail = Awaited<ReturnType<typeof bookDetail>>;
 
-const bookDetailAndFriends = memoize(async(id: string) => {
+const bookDetailAndFriends = async(id: string) => {
   const friends = await commonBook(id);
 
   return {
@@ -233,7 +233,7 @@ const bookDetailAndFriends = memoize(async(id: string) => {
       contents: (friends.archiveData.tree.contents as any[]).map(mapTree(id)),
     }
   };
-});
+};
 
 export const bookDetail = (id: string) => {
   return bookDetailAndFriends(id).then(result => result.book);
