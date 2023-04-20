@@ -17,7 +17,7 @@ export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: MET
       new InvalidRequestError('an orn query parameter is required')
     ).split(',');
 
-    const items = await locateAll(orns);
+    const items = await locateAll(orns, {concurrency: 10});
 
     return apiJsonResponse(200, {
       items
