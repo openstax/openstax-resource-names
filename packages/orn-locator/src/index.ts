@@ -42,11 +42,11 @@ export const isResourceOrContentOfTypeFilter = <T extends AnyOrnResource['type']
  * flattens a resource's contents tree and filters to given types
  */
 export const filterResourceContents = <T extends AnyOrnResource['type'][]>(
-  resource: AnyOrnResource, types: T
+  resource: AnyOrnResource | AnyOrnResource[], types: T
 ): FilterOrnTypes<AnyOrnResource, T[number]>[] => {
-  const content: AnyOrnResource[] = 'contents' in resource ? resource.contents : [];
+  const content: AnyOrnResource[] = resource instanceof Array ? resource : 'contents' in resource ? resource.contents : [];
   const base: FilterOrnTypes<AnyOrnResource, T[number]>[] =
-    isResourceOrContentOfType(resource, types) ? [resource] : [];
+    !(resource instanceof Array) && isResourceOrContentOfType(resource, types) ? [resource] : [];
 
   return content.reduce((result, child) => {
     return [
