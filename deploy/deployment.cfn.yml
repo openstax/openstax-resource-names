@@ -17,7 +17,7 @@ Parameters:
     Description: Which environment this is, e.g. "dev"
     Type: String
 
-  ReactAppConfigExampleMessage:
+  ExampleMessage:
     Description: Test message to be displayed by the frontend via the frontend config
     Type: String
 
@@ -65,35 +65,10 @@ Resources:
           AliasTarget:
             HostedZoneId: Z2FDTNDATAQYW2 # Indicates CloudFront
             DNSName: !GetAtt Distribution.DomainName
-  # ==============
-  # dynamo table
-  # ==============
-  ExampleTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        -
-          AttributeName: id
-          AttributeType: S
-        -
-          AttributeName: timestamp
-          AttributeType: N
-      BillingMode: PAY_PER_REQUEST
-      DeletionProtectionEnabled: !If [IsProduction, true, false]
-      KeySchema:
-        -
-          AttributeName: id
-          KeyType: HASH
-        -
-          AttributeName: timestamp
-          KeyType: RANGE
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: !If [IsProduction, true, false]
 
   # ==============
   # Lambda stuff
   # ==============
-
   apiLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -104,7 +79,7 @@ Resources:
       Handler: index.handler
       Layers:
         - arn:aws:lambda:us-east-1:177933569100:layer:AWS-Parameters-and-Secrets-Lambda-Extension:4
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 30 # logging stacktraces is surprisingly heavy
       Role: !GetAtt lambdaIAMRole.Arn
       Runtime: nodejs14.x
@@ -120,9 +95,8 @@ Resources:
             - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
               baseDomain:
                 Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
-          EXAMPLE_TABLE_NAME: !Ref ExampleTable
           ENV_NAME: !Ref EnvName
-          REACT_APP_CONFIG_EXAMPLE_MESSAGE: !Ref ReactAppConfigExampleMessage
+          EXAMPLE_MESSAGE: !Ref ExampleMessage
 
   apiLambdaUrl:
     Type: AWS::Lambda::Url
@@ -151,20 +125,6 @@ Resources:
               Service:
                 - lambda.amazonaws.com
       Policies:
-        - PolicyName: dynamo-access
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:Batch*
-                  - dynamodb:Describe*
-                  - dynamodb:Get*
-                  - dynamodb:Put*
-                  - dynamodb:Query
-                  - dynamodb:Scan
-                  - dynamodb:UpdateItem
-                  - dynamodb:DeleteItem
-                Resource: !GetAtt ExampleTable.Arn
         - PolicyName: logs
           PolicyDocument:
             Statement:
@@ -325,7 +285,8 @@ Resources:
             Status: "Enabled"
       WebsiteConfiguration:
         IndexDocument: "doesnt-exist.html"
-      AccessControl: PublicRead
+      PublicAccessBlockConfiguration:
+        BlockPublicPolicy: false
 
   BucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -398,6 +359,24 @@ Resources:
               Cookies:
                 Forward: all
               QueryString: 'true'
+            ViewerProtocolPolicy: redirect-to-https
+          
+          - PathPattern: /orn/*
+            TargetOriginId: ApiOrigin
+            AllowedMethods:
+              - GET
+              - HEAD
+              - DELETE
+              - POST
+              - OPTIONS
+              - PUT
+              - PATCH
+            Compress: 'true'
+            DefaultTTL: 86400
+            MaxTTL: 86400
+            MinTTL: 86400
+            ForwardedValues:
+              QueryString: false
             ViewerProtocolPolicy: redirect-to-https
 
           - PathPattern: /build/*

@@ -1,23 +1,23 @@
 import { envConfig, resolveConfigValue } from '@openstax/ts-utils/config';
 import { apiJsonResponse, METHOD } from '@openstax/ts-utils/routing';
 import { composeServiceMiddleware, createRoute } from '../../core/services';
-import { apiV0ExampleRoutes } from './example/routes';
 import { authMiddleware } from './middleware/authMiddleware';
 import { getEnvironmentConfig } from './middleware/configMiddleware';
 import { enableTracingMiddleware } from './middleware/enableTracingMiddleware';
+import { apiV0OrnRoutes } from './routes/ornRoutes';
 
 // frontendConfig values are visible to all users
 const configProvider = getEnvironmentConfig({
   local: {
     codeVersion: 'dev',
     frontendConfig: {
-      REACT_APP_CONFIG_EXAMPLE_MESSAGE: envConfig('REACT_APP_CONFIG_EXAMPLE_MESSAGE', 'runtime', 'hello from /api/v0/info'),
+      EXAMPLE_MESSAGE: envConfig('EXAMPLE_MESSAGE', 'runtime', 'hello from /api/v0/info'),
     },
   },
   deployed: {
     codeVersion: envConfig('CODE_VERSION'),
     frontendConfig: {
-      REACT_APP_SELECT_CONTENT_URL: envConfig('REACT_APP_CONFIG_EXAMPLE_MESSAGE', 'runtime'),
+      EXAMPLE_MESSAGE: envConfig('EXAMPLE_MESSAGE', 'runtime'),
     },
   },
 });
@@ -48,5 +48,5 @@ export const apiV0Index = createRoute({name: 'apiV0Info', method: METHOD.GET, pa
 
 export const apiV0Routes = () => ([
   apiV0Index,
-  ...apiV0ExampleRoutes(),
+  ...apiV0OrnRoutes(),
 ]);

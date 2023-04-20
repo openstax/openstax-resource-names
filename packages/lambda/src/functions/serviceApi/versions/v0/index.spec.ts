@@ -26,7 +26,7 @@ describe('apiV0Index', () => {
         apiHost: '',
         uiHost: '',
         frontendConfig: {
-          REACT_APP_CONFIG_EXAMPLE_MESSAGE: 'hello from /api/v0/info',
+          EXAMPLE_MESSAGE: 'hello from /api/v0/info',
         },
       },
       authProvider: stubAuthProvider()
@@ -34,11 +34,11 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"message":"greetings from the api controller","code":"code-version-goes-here","config":{"REACT_APP_CONFIG_EXAMPLE_MESSAGE":"hello from /api/v0/info"}}",
+  "body": "{"message":"greetings from the api controller","code":"code-version-goes-here","config":{"EXAMPLE_MESSAGE":"hello from /api/v0/info"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
-      "REACT_APP_CONFIG_EXAMPLE_MESSAGE": "hello from /api/v0/info",
+      "EXAMPLE_MESSAGE": "hello from /api/v0/info",
     },
     "message": "greetings from the api controller",
   },
@@ -59,7 +59,7 @@ describe('apiV0Index', () => {
         apiHost: '',
         uiHost: '',
         frontendConfig: {
-          REACT_APP_CONFIG_EXAMPLE_MESSAGE: 'hello from /api/v0/info',
+          EXAMPLE_MESSAGE: 'hello from /api/v0/info',
         },
       },
       authProvider: stubAuthProvider({name: 'test user'} as User)
@@ -68,11 +68,11 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"message":"greetings from the api controller test user","code":"code-version-goes-here","config":{"REACT_APP_CONFIG_EXAMPLE_MESSAGE":"hello from /api/v0/info"}}",
+  "body": "{"message":"greetings from the api controller test user","code":"code-version-goes-here","config":{"EXAMPLE_MESSAGE":"hello from /api/v0/info"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
-      "REACT_APP_CONFIG_EXAMPLE_MESSAGE": "hello from /api/v0/info",
+      "EXAMPLE_MESSAGE": "hello from /api/v0/info",
     },
     "message": "greetings from the api controller test user",
   },

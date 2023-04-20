@@ -11,7 +11,7 @@ export const Home = () => {
   const accountsBaseUrl = useAccountsUrl();
   const user = useAuth();
   const apiClient = useApiClient();
-  const configExampleMessage = useFrontendConfigValue('REACT_APP_CONFIG_EXAMPLE_MESSAGE');
+  const configExampleMessage = useFrontendConfigValue('EXAMPLE_MESSAGE');
 
   React.useEffect(() => {
     apiClient.apiV0Info({fetchConfig: {credentials: 'include'}})

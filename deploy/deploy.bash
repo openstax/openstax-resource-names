@@ -97,7 +97,7 @@ aws cloudformation deploy \
   --stack-name "$stackName" \
   --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$1" "Owner=$OWNER"
 
-reactAppConfigExampleMessage="hello from /api/v0/info"
+exampleMessage="hello from /api/v0/info"
 # clouformation cannot reference exports across regions, so these are applied like this
 replicaBucketWebsiteURL=$(AWS_DEFAULT_REGION="$AWS_ALT_REGION" get-stack-param "$stackName" ReplicaBucketWebsiteURL)
 
@@ -106,7 +106,7 @@ aws cloudformation deploy \
   --template-file "$SCRIPT_DIR/deployment.cfn.yml" \
   --stack-name "$stackName" \
   --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides "CodeBucket=$codeBucket" "ApiCodeKey=$apiCodeKey" "EnvName=$1" "Application=$APPLICATION" "ReactAppConfigExampleMessage=$reactAppConfigExampleMessage" "ReplicaBucketWebsiteURL=$replicaBucketWebsiteURL" \
+  --parameter-overrides "CodeBucket=$codeBucket" "ApiCodeKey=$apiCodeKey" "EnvName=$1" "Application=$APPLICATION" "ExampleMessage=$exampleMessage" "ReplicaBucketWebsiteURL=$replicaBucketWebsiteURL" \
   --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$1" "Owner=$OWNER"
 
 bucketName=$(get-stack-param "$stackName" StaticBucketName)
