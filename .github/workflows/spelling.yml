@@ -4,7 +4,7 @@ on: [pull_request]
 
 jobs:
   test:
-    name: checks
+    name: spelling
     runs-on: ubuntu-latest
     env:
       CI: true
