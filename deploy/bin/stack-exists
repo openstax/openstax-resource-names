@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# spell-checker: ignore pipefail
 set -euo pipefail
 
 aws cloudformation describe-stacks --stack-name "$1" > /dev/null 2>&1
