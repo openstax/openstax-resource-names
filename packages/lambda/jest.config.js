@@ -17,10 +17,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      branches: 87,
-      functions: 69,
-      lines: 86,
-      statements: 85
+      statements: 87
+      branches: 69,
+      functions: 86,
+      lines: 85,
     }
   },
   resolver: './jest.resolver.js'
