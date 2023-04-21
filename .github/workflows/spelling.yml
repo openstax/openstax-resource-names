@@ -6,10 +6,6 @@ jobs:
   test:
     name: checks
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        module: [lambda, frontend, utils]
     env:
       CI: true
     steps:
@@ -21,6 +17,4 @@ jobs:
         node-version-file: .nvmrc
         cache: yarn
     - run: yarn install --immutable
-    - run: yarn build
-    - run: yarn ci
-      working-directory: packages/${{ matrix.module }}
+    - run: yarn ci:spelling

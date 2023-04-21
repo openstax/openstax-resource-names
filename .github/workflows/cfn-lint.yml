@@ -1,0 +1,25 @@
+name: Lint
+
+on: [pull_request]
+
+jobs:
+  lint:
+    timeout-minutes: 30
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Run pip install
+        run: pip install cfn-lint
+
+      - name: Run cfn-lint
+        run: cfn-lint **/*.cfn.yml
