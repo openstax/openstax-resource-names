@@ -356,9 +356,10 @@ Resources:
             ForwardedValues:
               Headers:
                 - Authorization
+                - Origin
               Cookies:
                 Forward: all
-              QueryString: 'true'
+              QueryString: true
             ViewerProtocolPolicy: redirect-to-https
           
           - PathPattern: /orn/*
@@ -376,6 +377,11 @@ Resources:
             MaxTTL: 86400
             MinTTL: 86400
             ForwardedValues:
+              Headers:
+                - Authorization
+                - Origin
+              Cookies:
+                Forward: all
               QueryString: false
             ViewerProtocolPolicy: redirect-to-https
 
