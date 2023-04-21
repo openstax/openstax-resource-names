@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [lambda, frontend, utils]
+        module: [lambda, frontend]
     env:
       CI: true
     steps:
