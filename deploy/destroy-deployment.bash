@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spell-checker: ignore pipefail
+# spell-checker: ignore pipefail Kwarg yargs
 set -euo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )

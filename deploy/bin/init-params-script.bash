@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spell-checker: ignore pipefail
+# spell-checker: ignore pipefail yargs Kwarg urlparam
 set -euo pipefail
 
 source "$SCRIPT_DIR/constants.env"
@@ -17,10 +17,10 @@ function getKwarg() {
 region=$(getKwarg r)
 region=${region:-us-east-1}
 
-# Prevent bad behavior when trying to upload URL params on awscli v1
+# Prevent bad behavior when trying to upload URL params on aws cli v1
 aws_version=$(aws --version)
 if [ -z "${aws_version##aws-cli/1.*}" ]; then
-  # true is the default value for awscli v1
+  # true is the default value for aws cli v1
   original_cli_follow_urlparam=$(aws configure get cli_follow_urlparam || echo 'true')
 
   function restore_cli_follow_urlparam() {

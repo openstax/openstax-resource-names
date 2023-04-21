@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spell-checker: ignore pipefail
+# spell-checker: ignore pipefail SIGINT
 set -euo pipefail; if [ -n "${DEBUG-}" ]; then set -x; fi
 
 project_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
@@ -12,7 +12,7 @@ all_packages=$(yarn --silent workspaces info | node -e "process.stdout.write(Obj
 
 function start() {
   # looping instead of running `yarn workspaces run start`
-  # so that each command can be backgrounded
+  # so that each command can be sent to background
   for package in $all_packages; do
     echo "checking startup commands in $package ..."
     yarn --silent workspace "$package" run data:seed 2>&1 || true

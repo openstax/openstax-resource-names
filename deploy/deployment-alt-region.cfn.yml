@@ -29,7 +29,7 @@ Resources:
             NoncurrentVersionExpirationInDays: 1
             Status: "Enabled"
       WebsiteConfiguration:
-        IndexDocument: "doesnt-exist.html"
+        IndexDocument: "does-not-exist.html"
       PublicAccessBlockConfiguration:
         BlockPublicPolicy: false
 

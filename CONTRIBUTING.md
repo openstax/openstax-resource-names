@@ -1,3 +1,4 @@
+<!-- spell-checker: ignore tada Connexions HOTFIXES -->
 # Contributing to Openstax
 
 :+1::tada: First off, thanks for taking the time to contribute! :tada::+1:

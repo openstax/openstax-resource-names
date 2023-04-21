@@ -96,7 +96,7 @@ apiCodeKey="api-$timestamp.zip"
 aws s3 cp "dist/serviceApi.zip" "s3://$codeBucket/$apiCodeKey"
 
 # =======
-# main deployment includes alt region for failovers
+# main deployment includes alt region for fail over
 # =======
 aws cloudformation deploy \
   --region "$AWS_ALT_REGION" \
@@ -106,7 +106,7 @@ aws cloudformation deploy \
   --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$1" "Owner=$OWNER"
 
 exampleMessage="hello from /api/v0/info"
-# clouformation cannot reference exports across regions, so these are applied like this
+# cloudformation cannot reference exports across regions, so these are applied like this
 replicaBucketWebsiteURL=$(AWS_DEFAULT_REGION="$AWS_ALT_REGION" get-stack-param "$stackName" ReplicaBucketWebsiteURL)
 
 aws cloudformation deploy \
