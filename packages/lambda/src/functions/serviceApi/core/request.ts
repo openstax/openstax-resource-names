@@ -33,7 +33,7 @@ const config = {
     corsAllowedHostRegex: 'localhost'
   },
   deployed: {
-    corsAllowedHostRegex: '(openstax.org|herokuapp.com)$'
+    corsAllowedHostRegex: '(\\.local|localhost|openstax.org|rex-web(-production)?\\.herokuapp\\.com)$'
   }
 };
 
