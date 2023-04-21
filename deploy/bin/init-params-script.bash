@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# spell-checker: ignore pipefail
 set -euo pipefail
 
 source "$SCRIPT_DIR/constants.env"
