@@ -4,7 +4,6 @@ import type { AnyOrnLocateResponse, SearchResponse } from './resolve';
 const locateHost = process.env.ORN_LOCATE_HOST || process.env.REACT_APP_ORN_LOCATE_HOST || 'https://orn.openstax.org';
 
 export const locate = async (orn: string): Promise<AnyOrnLocateResponse> => {
-
   return fetch(locateHost + (new URL(orn)).pathname + '.json')
     .then(response => response.json());
 };
