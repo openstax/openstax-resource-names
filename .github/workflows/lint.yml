@@ -3,7 +3,7 @@ name: Lint
 on: [pull_request]
 
 jobs:
-  lint:
+  cfn:
     timeout-minutes: 30
     runs-on: ubuntu-20.04
 
@@ -23,3 +23,18 @@ jobs:
 
       - name: Run cfn-lint
         run: cfn-lint **/*.cfn.yml
+  test:
+    name: spelling
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+    - uses: actions/setup-node@v3
+      with:
+        node-version-file: .nvmrc
+        cache: yarn
+    - run: yarn install --immutable
+    - run: yarn ci:spelling
