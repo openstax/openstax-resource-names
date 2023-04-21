@@ -20,7 +20,7 @@ describe('Home', () => {
     const services = {
       configProvider: {
         getConfig: async() => ({
-          REACT_APP_CONFIG_EXAMPLE_MESSAGE: 'hello from /api/v0/info',
+          EXAMPLE_MESSAGE: 'hello from /api/v0/info',
         }),
       } as any,
     };
@@ -42,7 +42,7 @@ describe('Home', () => {
       },
       configProvider: {
         getConfig: async() => ({
-          REACT_APP_CONFIG_EXAMPLE_MESSAGE: 'hello from /api/v0/info',
+          EXAMPLE_MESSAGE: 'hello from /api/v0/info',
         }),
       } as any,
     };
