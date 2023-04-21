@@ -9,14 +9,17 @@ export const locate = async (orn: string): Promise<AnyOrnLocateResponse> => {
 };
 
 export const locateAll = async(orn: string[]): Promise<AnyOrnLocateResponse[]> => {
-  return fetch(locateHost + '/api/v0/orn-lookup' + queryString.stringify({orn}))
+  if (orn.length === 0) {
+    return Promise.resolve([]);
+  }
+  return fetch(locateHost + '/api/v0/orn-lookup?' + queryString.stringify({orn}))
     .then(response => response.json())
     .then(response => response.items)
   ;
 };
 
 export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}): Promise<SearchResponse> => {
-  return fetch(locateHost + '/api/v0/search' + queryString.stringify({query, limit, ...filters}))
+  return fetch(locateHost + '/api/v0/search?' + queryString.stringify({query, limit, ...filters}))
     .then(response => response.json())
   ;
 };
