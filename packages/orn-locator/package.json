@@ -1,6 +1,6 @@
 {
   "name": "@openstax/orn-locator",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "dist/nodejs.js",
   "browser": "dist/browser.js",
   "types": "index.d.ts",
@@ -10,7 +10,17 @@
       "browser": "./dist/index.browser.js",
       "default": "./dist/index.js"
     },
+    "./": {
+      "node": "./dist/index.nodejs.js",
+      "browser": "./dist/index.browser.js",
+      "default": "./dist/index.js"
+    },
     "./resolve": {
+      "node": "./dist/resolve.nodejs.js",
+      "browser": "./dist/resolve.browser.js",
+      "default": "./dist/resolve.js"
+    },
+    "./resolve/": {
       "node": "./dist/resolve.nodejs.js",
       "browser": "./dist/resolve.browser.js",
       "default": "./dist/resolve.js"
