@@ -6,16 +6,21 @@ jobs:
   test:
     name: checks
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [lambda, frontend]
     env:
       CI: true
     steps:
     - uses: actions/checkout@v2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
-    - uses: actions/cache@v2
-      id: node_modules
+    - uses: actions/setup-node@v3
       with:
-        path: node_modules
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
-    - run: yarn install
+        node-version-file: .nvmrc
+        cache: yarn
+    - run: yarn install --immutable
+    - run: yarn build
     - run: yarn ci
+      working-directory: packages/${{ matrix.module }}
