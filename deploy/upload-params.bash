@@ -8,6 +8,7 @@ source "$SCRIPT_DIR/bin/init-params-script.bash"
 
 # List all parameter names to upload here
 PARAMS=(
+  CookieName
   EncryptionPrivateKey # for decrypt authorization
   SignaturePublicKey # for decrypt authorization
 )
