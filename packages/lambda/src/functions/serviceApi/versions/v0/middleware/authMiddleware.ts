@@ -1,4 +1,4 @@
-import { awsAccountConfig, envConfig, lambdaParameterConfig, replaceConfig } from '@openstax/ts-utils/config';
+import { envConfig, lambdaParameterConfig, replaceConfig } from '@openstax/ts-utils/config';
 import { Track } from '@openstax/ts-utils/profile';
 import { ApiRouteRequest, AppServices } from '../../../core';
 
@@ -8,7 +8,12 @@ const config = {
     cookieName: 'oxa_dev',
   },
   deployed: {
-    cookieName: awsAccountConfig({sandbox: 'oxa_dev', production: 'oxa'}),
+    cookieName: lambdaParameterConfig(
+      replaceConfig('/[app]/[env]/api/CookieName', {
+        '[app]': envConfig('APPLICATION'),
+        '[env]': envConfig('ENV_NAME', 'runtime')
+      })
+    ),
     encryptionPrivateKey: lambdaParameterConfig(
       replaceConfig('/[app]/[env]/api/EncryptionPrivateKey', {
         '[app]': envConfig('APPLICATION'),
