@@ -6,7 +6,7 @@ import { patterns } from '../ornPatterns';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
-const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url';
+const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url,icon_url';
 
 const getReleaseJson = memoize(async () => {
   return fetch('https://openstax.org/rex/release.json')
@@ -93,6 +93,9 @@ const commonBook = memoize(async(id: string) => {
       slug: oswebData.meta.slug as string,
       default_page: default_page ? mapTree(id)(default_page) : undefined,
       theme: oswebData.cover_color as string,
+      icon: {
+        url: oswebData.icon_url as string,
+      },
       license: {
         holder: 'OpenStax',
         name: archiveData.license.name,
@@ -229,6 +232,7 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
   return {
     id: subbookId,
     title: tree.title as string,
+    titleParts: titleSplit(tree.title),
     book: bookData,
     default_page: default_page ? mapTree(bookId)(default_page) : undefined,
     contents: (tree.contents as any[]).map(mapTree(bookId)),
