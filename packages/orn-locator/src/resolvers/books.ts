@@ -1,19 +1,23 @@
 import fetch from 'cross-fetch';
 import memoize from 'lodash/fp/memoize';
 import asyncPool from 'tiny-async-pool/lib/es6';
-import { filterResourceContents, isResourceOrContentOfTypeFilter, locateAll } from '..';
+import { isResourceOrContentOfTypeFilter } from '..';
 import { patterns } from '../ornPatterns';
+import { locateAll } from '../resolve';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
 const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url,icon_url';
 
-const getReleaseJson = memoize(async () => {
+const preloadedData = (file: string) => import('../data/' + file);
+
+export const getReleaseJson = memoize(async () => preloadedData('release.json').catch(() => {
   return fetch('https://openstax.org/rex/release.json')
     .then(response => response.json())
   ;
-});
-const getArchiveInfo = memoize(async (bookId: string) => {
+}));
+
+export const getArchiveInfo = async (bookId: string) => {
   const releaseJson = await getReleaseJson();
   const bookConfig = releaseJson.books[bookId];
 
@@ -21,7 +25,7 @@ const getArchiveInfo = memoize(async (bookId: string) => {
     archivePath: bookConfig.archiveOverride || releaseJson.archiveUrl,
     bookVersion: bookConfig.defaultVersion,
   };
-});
+};
 
 const getBookIds = async () => {
   const releaseJson = await getReleaseJson();
@@ -63,12 +67,17 @@ export const library = async(language: string = 'all') => {
   };
 };
 
-const archiveBook = memoize(async(id: string) => {
+export const bookCacheKey = (archivePath: string, id: string, bookVersion: string) =>
+  `${archivePath.replace(/^\/apps\/archive\//, '')}-${id}@${bookVersion}.json`;
+
+const archiveBook = async(id: string) => {
   const {archivePath, bookVersion} = await getArchiveInfo(id);
-  const archiveUrl = `https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`;
-  return fetch(archiveUrl)
-    .then(response => response.json());
-});
+  return preloadedData(bookCacheKey(archivePath, id, bookVersion))
+    .catch(() => 
+      fetch(`https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`)
+        .then(response => response.json())
+    );
+};
 
 const commonBook = memoize(async(id: string) => {
   const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
@@ -200,9 +209,24 @@ const findTreeNode = (predicate: (tree: any) => boolean, tree: any): any => {
   }
 };
 
+const findTreePages = (tree: any): any => {
+  if (!('contents' in tree)) {
+    return [tree];
+  }
+
+  const result = [];
+
+  for (const node of tree.contents) {
+    const withParent = {...node, parent: tree};
+    result.push(...findTreePages(withParent));
+  }
+
+  return result;
+};
+
 type BookDetail = Awaited<ReturnType<typeof bookDetail>>;
 
-const bookDetailAndFriends = memoize(async(id: string) => {
+const bookDetailAndFriends = async(id: string) => {
   const friends = await commonBook(id);
 
   return {
@@ -212,7 +236,7 @@ const bookDetailAndFriends = memoize(async(id: string) => {
       contents: (friends.archiveData.tree.contents as any[]).map(mapTree(id)),
     }
   };
-});
+};
 
 export const bookDetail = (id: string) => {
   return bookDetailAndFriends(id).then(result => result.book);
@@ -362,6 +386,28 @@ export const bookSearch = async(query: string, limit: number, filters: {[key: st
   return Promise.all(bookIds.map(book))
     .then(doSearch(query, limit));
 };
+const syncPageSearchData = (archiveBook: any) => (treeNode: any) => {
+  const bookId = archiveBook.id;
+  const pageId = treeNode.id.split('@')[0];
+
+  const contextTitles = recursiveContext(treeNode).map(node => ({
+    id: node.id.split('@')[0],
+    ...titleSplit(node.title),
+    ...mapTocType(node),
+  }));
+  const thisNodeResult = contextTitles.slice(-1)[0];
+
+  return {
+    orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
+    title: thisNodeResult.title,
+    contextTitles: contextTitles.map(item => item.title),
+  };
+};
+
+const archiveBookWithMappedContents = async(id: string) => {
+  const archiveData = await archiveBook(id);
+  return findTreePages(archiveData.tree).map(syncPageSearchData(archiveData));
+};
 export const pageSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
   const bookIds = 'scope' in filters
     ? (typeof filters.scope === 'string' ? [filters.scope] : filters.scope)
@@ -376,14 +422,10 @@ export const pageSearch = async(query: string, limit: number, filters: {[key: st
       .filter(<X>(x: X): x is X & Exclude<undefined, X> => x !== undefined)
     : await getBookIds();
 
-
-  return Promise.all(bookIds.map(bookDetailAndFriends))
-    .then(results => results.map(({archiveData: archiveBook, book}) => {
-      const pages = filterResourceContents(book, ['book:page']);
-      return pages.map(page => ({...page, ...syncPageNodeData(page, archiveBook)}));
-    }))
+  return Promise.all(bookIds.map(archiveBookWithMappedContents))
     .then(results => results.flat())
-    .then(doSearch(query, limit));
+    .then(doSearch(query, limit))
+  ;
 };
 
 const doSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[]> => {

@@ -1,17 +1,26 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
   "language": "en",
   "words": [
+    "Xapi",
     "browsersafe",
+    "cloudformation",
     "domutils",
     "openstax",
+    "orns",
     "osweb",
+    "signup",
+    "stax",
     "subbook",
-    "subbooks"
+    "subbooks",
+    "subrequest",
+    "subrequests",
+    "systemsmanager"
   ],
   "flagWords": [],
   "ignorePaths": [
+    "*.spec.ts.snap",
     "coverage",
     "package.json",
     "yarn.lock",

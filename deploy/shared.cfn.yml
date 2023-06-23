@@ -1,0 +1,77 @@
+Parameters:
+  BucketPrefix:
+    Description: A prefix to prevent collisions between buckets in different accounts, e.g. sandbox-
+    Type: String
+
+  PagerDutyAnytimeEndpoint:
+    Description: PagerDuty endpoint for Anytime notifications
+    Type: String
+
+  PagerDutyWorkdayEndpoint:
+    Description: PagerDuty endpoint for Workday notifications
+    Type: String
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub ${BucketPrefix}${AWS::StackName}-lambda-code
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: auto-delete
+            Status: Enabled
+            ExpirationInDays: 30
+
+  AnytimeTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-anytime-topic
+      Subscription:
+        - Endpoint: !Ref PagerDutyAnytimeEndpoint
+          Protocol: https
+
+  WorkdayTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-workday-topic
+      Subscription:
+        - Endpoint: !Ref PagerDutyWorkdayEndpoint
+          Protocol: https
+
+  TopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Condition:
+              ArnLike:
+                AWS:SourceArn: !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:*
+            Action: sns:Publish
+            Resource: '*'
+      Topics:
+        - !Ref AnytimeTopic
+        - !Ref WorkdayTopic
+
+Outputs:
+  BucketName:
+    Description: Bucket name
+    Value: !Ref Bucket
+
+  AnytimeTopicArn:
+    Description: ARN of the anytime SNS topic
+    Value: !Ref AnytimeTopic
+    Export:
+      Name: !Sub ${AWS::StackName}-sns-anytime-topic-arn
+
+  WorkdayTopicArn:
+    Description: ARN of the workday SNS topic
+    Value: !Ref WorkdayTopic
+    Export:
+      Name: !Sub ${AWS::StackName}-sns-workday-topic-arn

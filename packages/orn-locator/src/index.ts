@@ -1,47 +1,13 @@
-import asyncPool from 'tiny-async-pool/lib/es6';
-import { patterns } from './ornPatterns';
+import {locate, locateAll, search} from './lookup';
+import type { AnyOrnLocateResponse, SearchResponse } from './resolve';
 
-export const locate = async (orn: string) => {
-  for (const pattern of Object.values(patterns)) {
-    const match = pattern.match(orn);
+export { locate, locateAll, search };
 
-    if (match) {
-      return await pattern.resolve(match.params);
-    }
-  }
+export type { AnyOrnLocateResponse, SearchResponse };
 
-  return {type: 'not-found', orn} as const;
-};
-
-export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: number} = {}): Promise<AnyOrnLocateResponse[]> => {
-  return await asyncPool(concurrency, orn, locate);
-};
-
-export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}) => {
-  type Patterns = typeof patterns;
-  const result: {[K in keyof Patterns]?: {name: string; items: Awaited<ReturnType<NonNullable<Patterns[K]['search']>>>}} = {};
-
-  for (const [key, pattern] of Object.entries(patterns)) {
-    const innerResult = await pattern.search?.(query, limit, filters);
-    if (innerResult && innerResult.length > 0) {
-      result[key as keyof Patterns] = {items: innerResult as any, name: pattern.name};
-    }
-  }
-
-  return result;
-};
-
-export { patterns };
-
-export default {locate, locateAll, patterns, search};
-
+export default {locate, locateAll, search};
 
 type FilterWithKey<T, K extends string> = T extends {[key in K]: any} ? T : never;
-
-/*
- * this is anything that might be returned by `locate` or `locateAll`
- */
-export type AnyOrnLocateResponse = Awaited<ReturnType<typeof locate>>;
 
 /*
  * resources can have `contents` trees that can contain summary versions of the main resource
@@ -76,11 +42,11 @@ export const isResourceOrContentOfTypeFilter = <T extends AnyOrnResource['type']
  * flattens a resource's contents tree and filters to given types
  */
 export const filterResourceContents = <T extends AnyOrnResource['type'][]>(
-  resource: AnyOrnResource, types: T
+  resource: AnyOrnResource | AnyOrnResource[], types: T
 ): FilterOrnTypes<AnyOrnResource, T[number]>[] => {
-  const content: AnyOrnResource[] = 'contents' in resource ? resource.contents : [];
+  const content: AnyOrnResource[] = resource instanceof Array ? resource : 'contents' in resource ? resource.contents : [];
   const base: FilterOrnTypes<AnyOrnResource, T[number]>[] =
-    isResourceOrContentOfType(resource, types) ? [resource] : [];
+    !(resource instanceof Array) && isResourceOrContentOfType(resource, types) ? [resource] : [];
 
   return content.reduce((result, child) => {
     return [
