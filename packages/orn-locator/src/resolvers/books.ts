@@ -7,7 +7,7 @@ import { locateAll } from '../resolve';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
-const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url,icon_url';
+const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url';
 
 const preloadedData = (file: string) => import('../data/' + file);
 
@@ -102,9 +102,6 @@ const commonBook = memoize(async(id: string) => {
       slug: oswebData.meta.slug as string,
       default_page: default_page ? mapTree(id)(default_page) : undefined,
       theme: oswebData.cover_color as string,
-      icon: {
-        url: oswebData.icon_url as string,
-      },
       license: {
         holder: 'OpenStax',
         name: archiveData.license.name,
