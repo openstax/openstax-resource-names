@@ -253,6 +253,7 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
   return {
     id: subbookId,
     title: tree.title as string,
+    titleParts: titleSplit(tree.title),
     book: bookData,
     default_page: default_page ? mapTree(bookId)(default_page) : undefined,
     contents: (tree.contents as any[]).map(mapTree(bookId)),
