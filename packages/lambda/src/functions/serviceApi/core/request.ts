@@ -42,7 +42,7 @@ export const corsResponseMiddleware = ({getEnvironmentConfig}: Pick<AppServices,
   const cors = async () => {
     const allowedHost = await resolveConfigValue(getEnvironmentConfig(config).corsAllowedHostRegex);
 
-    if (request.headers.origin && new URL(request.headers.origin).hostname.match(new RegExp(allowedHost))) {
+    if (request.headers.origin && request.headers.origin !== 'null' && new URL(request.headers.origin).hostname.match(new RegExp(allowedHost))) {
       return {
         'Access-Control-Allow-Origin': request.headers.origin,
         'Access-Control-Allow-Credentials': 'true',
