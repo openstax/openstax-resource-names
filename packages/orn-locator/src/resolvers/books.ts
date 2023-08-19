@@ -17,13 +17,17 @@ export const getReleaseJson = memoize(async () => preloadedData('release.json').
   ;
 }));
 
-export const getArchiveInfo = async (bookId: string) => {
+export const getArchiveInfo = async (bookId: string, bookVersion?: string, archivePath?: string) => {
+  if (archivePath && bookVersion) {
+    return { resolvedArchivePath: archivePath, resolvedBookVersion: bookVersion };
+  }
+
   const releaseJson = await getReleaseJson();
   const bookConfig = releaseJson.books[bookId];
 
   return {
-    archivePath: bookConfig.archiveOverride || releaseJson.archiveUrl,
-    bookVersion: bookConfig.defaultVersion,
+    resolvedArchivePath: archivePath || bookConfig.archiveOverride || releaseJson.archiveUrl,
+    resolvedBookVersion: bookVersion || bookConfig.defaultVersion,
   };
 };
 
@@ -36,7 +40,7 @@ const getBookIds = async () => {
 
 const libraries = [
   'all',
-  'en', 
+  'en',
   'es',
   'pl',
 ];
@@ -70,22 +74,23 @@ export const library = async(language: string = 'all') => {
 export const bookCacheKey = (archivePath: string, id: string, bookVersion: string) =>
   `${archivePath.replace(/^\/apps\/archive\//, '')}-${id}@${bookVersion}.json`;
 
-const archiveBook = async(id: string) => {
-  const {archivePath, bookVersion} = await getArchiveInfo(id);
-  return preloadedData(bookCacheKey(archivePath, id, bookVersion))
-    .catch(() => 
-      fetch(`https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`)
+const archiveBook = async(bookId: string, bookVersion?: string, archivePath?: string) => {
+  const {resolvedArchivePath, resolvedBookVersion} = await getArchiveInfo(bookId, bookVersion, archivePath);
+  return preloadedData(bookCacheKey(resolvedArchivePath, bookId, resolvedBookVersion))
+    .catch(() =>
+      fetch(`https://openstax.org${resolvedArchivePath}/contents/${bookId}@${resolvedBookVersion}.json`)
         .then(response => response.json())
     );
 };
 
-const commonBook = memoize(async(id: string) => {
+const commonBook = memoize(async(id: string, version?: string, archive?: string) => {
+  console.error(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`);
   const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
     .then(response => response.json() as any)
     .then(data => data.items[0])
   ;
 
-  const archiveData = await archiveBook(id);
+  const archiveData = await archiveBook(id, version, archive);
   const default_page_slug = oswebData.webview_rex_link.match(/\/books\/.*\/pages\/(.*)$/)?.[1] as string;
   const default_page = default_page_slug && findTreeNodeBySlug(default_page_slug, archiveData.tree);
 
@@ -94,7 +99,7 @@ const commonBook = memoize(async(id: string) => {
     archiveData,
     book: {
       id,
-      orn: `https://openstax.org/orn/book/${id}`,
+      orn: `https://openstax.org/orn/${archive ? `archive/${archive}/` : ''}book/${id}${version ? `@${version}` : ''}`,
       type: 'book' as const,
       state: oswebData.book_state as string,
       title: oswebData.title as string,
@@ -124,8 +129,8 @@ const commonBook = memoize(async(id: string) => {
 
 type Book = Awaited<ReturnType<typeof commonBook>>['book'];
 
-export const book = async(id: string) => {
-  return (await commonBook(id)).book;
+export const book = async(id: string, version?: string, archive?: string) => {
+  return (await commonBook(id, version, archive)).book;
 };
 
 export type TreePageElement = {id: string; title: string; titleParts: TitleParts; orn: string; type: 'book:page'; slug: string; tocType: string; tocTargetType: string};
@@ -223,8 +228,8 @@ const findTreePages = (tree: any): any => {
 
 type BookDetail = Awaited<ReturnType<typeof bookDetail>>;
 
-const bookDetailAndFriends = async(id: string) => {
-  const friends = await commonBook(id);
+const bookDetailAndFriends = async(id: string, version?: string, archive?: string) => {
+  const friends = await commonBook(id, version, archive);
 
   return {
     ...friends,
@@ -235,14 +240,16 @@ const bookDetailAndFriends = async(id: string) => {
   };
 };
 
-export const bookDetail = (id: string) => {
-  return bookDetailAndFriends(id).then(result => result.book);
+export const bookDetail = (id: string, version?: string, archive?: string) => {
+  return bookDetailAndFriends(id, version, archive).then(result => result.book);
 };
 
-export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: string}) => {
-  const bookData = await book(bookId);
-  const {archivePath, bookVersion} = await getArchiveInfo(bookId);
-  const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}.json`;
+export const subbook = async(
+  {archivePath, bookId, bookVersion, subbookId}: {archivePath?: string; bookId: string; bookVersion?: string; subbookId: string}
+) => {
+  const bookData = await book(bookId, bookVersion, archivePath);
+  const {resolvedArchivePath, resolvedBookVersion} = await getArchiveInfo(bookId, bookVersion, archivePath);
+  const archiveUrl = `https://openstax.org${resolvedArchivePath}/contents/${bookId}@${resolvedBookVersion}.json`;
   const archiveData = await fetch(archiveUrl)
     .then(response => response.json())
   ;
@@ -257,7 +264,7 @@ export const subbook = async({bookId, subbookId}: {bookId: string; subbookId: st
     book: bookData,
     default_page: default_page ? mapTree(bookId)(default_page) : undefined,
     contents: (tree.contents as any[]).map(mapTree(bookId)),
-    orn: `https://openstax.org/orn/book:subbook/${bookId}:${subbookId}`,
+    orn: `https://openstax.org/orn/${archivePath ? `archive/${archivePath}/` : ''}book:subbook/${bookId}${bookVersion ? `@${bookVersion}` : ''}:${subbookId}`,
     type: 'book:subbook' as const,
   };
 };
@@ -291,12 +298,14 @@ const syncPageNodeData = (page: any, archiveBook: any) => {
   };
 };
 
-const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) => {
-  const {archiveData: archiveBook, book: bookData} = await commonBook(bookId);
+const pageWithData = async(
+  {archivePath, bookId, bookVersion, pageId}: {archivePath?: string; bookId: string; bookVersion?: string; pageId: string}
+) => {
+  const {resolvedArchivePath, resolvedBookVersion} = await getArchiveInfo(bookId, bookVersion, archivePath);
+  const {archiveData: archiveBook, book: bookData} = await commonBook(bookId, resolvedBookVersion, resolvedArchivePath);
   const treeNode = findTreeNodeById(pageId, archiveBook.tree);
 
-  const {archivePath, bookVersion} = await getArchiveInfo(bookId);
-  const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}:${pageId}.json`;
+  const archiveUrl = `https://openstax.org${resolvedArchivePath}/contents/${bookId}@${resolvedBookVersion}:${pageId}.json`;
   const archiveData = await fetch(archiveUrl)
     .then(response => response.json())
   ;
@@ -315,19 +324,19 @@ const pageWithData = async({bookId, pageId}: {bookId: string; pageId: string}) =
   }] as const;
 };
 
-export const page = async(args: {bookId: string; pageId: string}) => {
+export const page = async(args: {archivePath?: string; bookId: string; bookVersion?: string; pageId: string}) => {
   const [,, pageResponse] = await pageWithData(args);
   return pageResponse;
 };
 
-export const element = async({bookId, pageId, elementId}: {bookId: string; pageId: string; elementId: string}) => {
-  const [,, pageResponse] = await pageWithData({bookId, pageId});
+export const element = async({archivePath, bookId, bookVersion, pageId, elementId}: {archivePath?: string; bookId: string; bookVersion?: string; pageId: string; elementId: string}) => {
+  const [,, pageResponse] = await pageWithData({archivePath, bookId, bookVersion, pageId});
 
   const url = `${pageResponse.urls.experience}#${elementId}`;
   const title = `Element in ${pageResponse.contextTitle}`;
 
   return {
-    orn: `https://openstax.org/orn/book:page:element/${bookId}:${pageId}:${elementId}`,
+    orn: `https://openstax.org/orn/${archivePath ? `archive/${archivePath}/` : ''}book:page:element/${bookId}${bookVersion ? `@${bookVersion}` : ''}:${pageId}:${elementId}`,
     id: elementId,
     title,
     type: 'book:page:element' as const,
@@ -347,9 +356,9 @@ export const elementSearch = async(query: string, limit: number, filters: {[key:
     : (await library('all')).contents.map(book => book.id);
 
   const books = await Promise.all(scopes.map(async bookId => {
-    const {archivePath, bookVersion} = await getArchiveInfo(bookId);
-    const archiveVersion = archivePath.replace('/apps/archive/', '');
-    return `${archiveVersion}/${bookId}@${bookVersion}`;
+    const {resolvedArchivePath, resolvedBookVersion} = await getArchiveInfo(bookId);
+    const archiveVersion = resolvedArchivePath.replace('/apps/archive/', '');
+    return `${archiveVersion}/${bookId}@${resolvedBookVersion}`;
   }));
 
   return fetch(`https://openstax.org/open-search/api/v0/search?q=${query}&books=${encodeURIComponent(books.join(','))}&index_strategy=i1&search_strategy=s1`)
@@ -380,7 +389,7 @@ export const bookSearch = async(query: string, limit: number, filters: {[key: st
     : await getBookIds();
 
 
-  return Promise.all(bookIds.map(book))
+  return Promise.all(bookIds.map((bookId) => book(bookId)))
     .then(doSearch(query, limit));
 };
 const syncPageSearchData = (archiveBook: any) => (treeNode: any) => {
