@@ -1,7 +1,7 @@
-const { getReleaseJson, bookCacheKey, getArchiveInfo } = require('../dist/resolvers/books.js')
 const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
+const { getReleaseJson, bookCacheKey, getArchiveInfo } = require('../dist/resolvers/books.js')
 
 const preloadData = async() => {
   const releaseJson = await getReleaseJson();
