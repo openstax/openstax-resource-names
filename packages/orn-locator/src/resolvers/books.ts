@@ -280,12 +280,12 @@ const recursiveContext = (node: any): any[] => {
   }
 };
 
-const syncPageNodeData = (page: any, archiveBook: any) => {
+const syncPageNodeData = (page: any, archiveBook: any, bookContentVersion?: string, bookArchiveVersion?: string) => {
   const pageId = page.id.split('@')[0];
   const bookId = archiveBook.id;
   const treeNode = findTreeNodeById(pageId, archiveBook.tree);
 
-  const contextNodes = recursiveContext(treeNode).map(mapTreeNodeData(bookId));
+  const contextNodes = recursiveContext(treeNode).map(mapTreeNodeData(bookId, bookContentVersion, bookArchiveVersion));
   const thisNodeResult = contextNodes.slice(-1)[0];
 
   return {
@@ -318,7 +318,7 @@ const pageWithData = async(
   const rexUrl = `https://openstax.org/books/${bookData.slug}/pages/${archiveData.slug}`;
 
   return [bookData, archiveData, {
-    ...syncPageNodeData(treeNode, archiveBook),
+    ...syncPageNodeData(treeNode, archiveBook, bookContentVersion, bookArchiveVersion),
     title: archiveData.title as string,
     book: bookData,
     slug: archiveData.slug as string,
