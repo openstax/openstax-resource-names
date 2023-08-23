@@ -17,8 +17,8 @@ export const getReleaseJson = memoize(async () => preloadedData('release.json').
   ;
 }));
 
-export const getArchiveInfo = async (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => {
-  const archivePath = bookArchiveVersion ? (bookArchiveVersion.startsWith('/apps/archive/') ? bookArchiveVersion : `/apps/archive/${bookArchiveVersion}`) : null;
+export const getArchiveInfo = memoize(async (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => {
+  const archivePath = bookArchiveVersion ? `/apps/archive/${bookArchiveVersion}` : null;
 
   if (archivePath && bookContentVersion) {
     return { archivePath, bookVersion: bookContentVersion };
@@ -31,7 +31,7 @@ export const getArchiveInfo = async (bookId: string, bookContentVersion?: string
     archivePath: archivePath || bookConfig.archiveOverride || releaseJson.archiveUrl,
     bookVersion: bookContentVersion || bookConfig.defaultVersion,
   };
-};
+});
 
 const getBookIds = async () => {
   const releaseJson = await getReleaseJson();
@@ -106,7 +106,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
       title: oswebData.title as string,
       language: archiveData.language as string,
       slug: oswebData.meta.slug as string,
-      default_page: default_page ? mapTree(id)(default_page) : undefined,
+      default_page: default_page ? mapTree(id, version, archive)(default_page) : undefined,
       theme: oswebData.cover_color as string,
       license: {
         holder: 'OpenStax',
@@ -152,7 +152,7 @@ const mapTocType = (tree: any): TocTypes => {
 };
 
 type TreeNodeDataWithoutChildren = TreePageElement | Omit<TreeSubTree, 'contents'>;
-const mapTreeNodeData = (bookId: string) => (tree: any): TreeNodeDataWithoutChildren => {
+const mapTreeNodeData = (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => (tree: any): TreeNodeDataWithoutChildren => {
   if (tree.contents) {
     const subTreeId = tree.id.split('@')[0];
     const default_page = findTreeNode(t => !('contents' in t), tree);
@@ -160,8 +160,8 @@ const mapTreeNodeData = (bookId: string) => (tree: any): TreeNodeDataWithoutChil
       id: subTreeId,
       title: tree.title,
       titleParts: titleSplit(tree.title),
-      default_page: default_page ? mapTree(bookId)(default_page) as TreePageElement : undefined,
-      orn: `https://openstax.org/orn/book:subbook/${bookId}:${subTreeId}`,
+      default_page: default_page ? mapTree(bookId, bookContentVersion, bookArchiveVersion)(default_page) as TreePageElement : undefined,
+      orn: `https://openstax.org/orn/book:subbook/${bookId}${bookContentVersion ? `@${bookContentVersion}${bookArchiveVersion ? `:${bookArchiveVersion}` : ''}` : ''}:${subTreeId}`,
       type: 'book:subbook',
       ...mapTocType(tree),
     };
@@ -171,7 +171,7 @@ const mapTreeNodeData = (bookId: string) => (tree: any): TreeNodeDataWithoutChil
       id: pageId,
       title: tree.title,
       titleParts: titleSplit(tree.title),
-      orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
+      orn: `https://openstax.org/orn/book:page/${bookId}${bookContentVersion ? `@${bookContentVersion}${bookArchiveVersion ? `:${bookArchiveVersion}` : ''}` : ''}:${pageId}`,
       slug: tree.slug,
       type: 'book:page',
       ...mapTocType(tree),
@@ -179,14 +179,14 @@ const mapTreeNodeData = (bookId: string) => (tree: any): TreeNodeDataWithoutChil
   }
 };
 
-const mapTree = (bookId: string) => (tree: any): TreeElement => {
+const mapTree = (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => (tree: any): TreeElement => {
   if (tree.contents) {
     return {
-      ...mapTreeNodeData(bookId)(tree),
-      contents: tree.contents.map(mapTree(bookId)),
+      ...mapTreeNodeData(bookId, bookContentVersion, bookArchiveVersion)(tree),
+      contents: tree.contents.map(mapTree(bookId, bookContentVersion, bookArchiveVersion)),
     } as TreeElement;
   } else {
-    return mapTreeNodeData(bookId)(tree) as TreeElement;
+    return mapTreeNodeData(bookId, bookContentVersion, bookArchiveVersion)(tree) as TreeElement;
   }
 };
 
@@ -306,10 +306,10 @@ const pageWithData = async(
     bookArchiveVersion?: string; bookId: string; bookContentVersion?: string; pageId: string;
   }
 ) => {
-  const {archivePath, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
-  const {archiveData: archiveBook, book: bookData} = await commonBook(bookId, bookVersion, archivePath);
+  const {archiveData: archiveBook, book: bookData} = await commonBook(bookId, bookContentVersion, bookArchiveVersion);
   const treeNode = findTreeNodeById(pageId, archiveBook.tree);
 
+  const {archivePath, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
   const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}:${pageId}.json`;
   const archiveData = await fetch(archiveUrl)
     .then(response => response.json())
