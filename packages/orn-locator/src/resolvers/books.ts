@@ -18,7 +18,7 @@ export const getReleaseJson = memoize(async () => preloadedData('release.json').
 }));
 
 export const getArchiveInfo = async (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => {
-  const archivePath = bookArchiveVersion ? `/apps/archive/${bookArchiveVersion}` : null;
+  const archivePath = bookArchiveVersion ? (bookArchiveVersion.startsWith('/apps/archive/') ? bookArchiveVersion : `/apps/archive/${bookArchiveVersion}`) : null;
 
   if (archivePath && bookContentVersion) {
     return { archivePath, bookVersion: bookContentVersion };
@@ -86,7 +86,6 @@ const archiveBook = async(bookId: string, bookContentVersion?: string, bookArchi
 };
 
 const commonBook = memoize(async(id: string, version?: string, archive?: string) => {
-  console.error(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`);
   const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
     .then(response => response.json() as any)
     .then(data => data.items[0])
