@@ -236,7 +236,7 @@ const bookDetailAndFriends = async(id: string, version?: string, archive?: strin
     ...friends,
     book: {
       ...friends.book,
-      contents: (friends.archiveData.tree.contents as any[]).map(mapTree(id)),
+      contents: (friends.archiveData.tree.contents as any[]).map(mapTree(id, version, archive)),
     }
   };
 };
@@ -265,8 +265,8 @@ export const subbook = async(
     title: tree.title as string,
     titleParts: titleSplit(tree.title),
     book: bookData,
-    default_page: default_page ? mapTree(bookId)(default_page) : undefined,
-    contents: (tree.contents as any[]).map(mapTree(bookId)),
+    default_page: default_page ? mapTree(bookId, bookContentVersion, bookArchiveVersion)(default_page) : undefined,
+    contents: (tree.contents as any[]).map(mapTree(bookId, bookContentVersion, bookArchiveVersion)),
     orn: `https://openstax.org/orn/book:subbook/${bookId}${bookContentVersion ? `@${bookContentVersion}${bookArchiveVersion ? `:${bookArchiveVersion}` : ''}` : ''}:${subbookId}`,
     type: 'book:subbook' as const,
   };
