@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [lambda, frontend]
+        module: [lambda, frontend, orn-locator]
     env:
       CI: true
     steps:
