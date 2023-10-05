@@ -63,7 +63,7 @@ const libraryData = (language: string) => {
 
 export const library = async(language: string = 'all') => {
   const bookIds = await getBookIds();
-  const contents: Book[] = (await asyncPool(2, bookIds, book)).filter((book: Book) =>
+  const contents: Book[] = (await asyncPool(2, bookIds, (bookId: string) => book(bookId))).filter((book: Book) =>
     (language === 'all' || book.language === language) && book.state === 'live'
   );
 
