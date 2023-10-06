@@ -349,8 +349,8 @@ export const element = async({bookArchiveVersion, bookId, bookContentVersion, pa
 };
 
 export const elementSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Awaited<ReturnType<typeof element>>[]> => {
-  const releaseIds = await getReleaseIds();
-  const results = await doOpenSearch(searchClient, limit, query, releaseIds, 'i1');
+  const bookIds = await getBookIds();
+  const results = await doOpenSearch(searchClient, limit, query, bookIds, 'i1');
 
   return Promise.all(results.map(result => {
     const bookId = assertInstanceOf<string[]>(result.index.match(/__(.*)@/), Array)[1];

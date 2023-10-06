@@ -20,5 +20,6 @@ export const createSearchClient = <C extends string = 'search'>(initializer: Ini
     fetchApi: initializer.fetch,
   })));
 
+  // We proxy the SearchApi so we don't need to wait for the config to load until it is used
   return { search: async(requestParameters: SearchRequest) => (await getSearchApi()).search(requestParameters) };
 };
