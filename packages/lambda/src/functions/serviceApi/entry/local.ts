@@ -7,6 +7,7 @@ import { fileSystemVersionedDocumentStore } from '@openstax/ts-utils/services/ve
 import {NextFunction, Request, Response} from 'express';
 import fetch from 'node-fetch';
 import queryString from 'query-string';
+import { createSearchClient } from '../../../services/searchClient/searchClient';
 import { composeResponseMiddleware, getRequestResponder, profileReportMiddleware } from '../core/request';
 import { ApiRouteRequest } from '../core/types';
 
@@ -16,7 +17,8 @@ const dataDir = path.join(__dirname, '../../../../../data');
 const services = {
   getEnvironmentConfig: getKeyValue('local'),
   versionedDocumentStore: fileSystemVersionedDocumentStore({dataDir}),
-  createAuthProvider: subrequestAuthProvider({configSpace: 'local', fetch})
+  createAuthProvider: subrequestAuthProvider({configSpace: 'local', fetch}),
+  createSearchClient: createSearchClient({configSpace: 'local', fetch}),
 };
 
 export type LocalServices = typeof services;

@@ -1,5 +1,6 @@
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { patterns } from './ornPatterns';
+import type { SearchClient } from './types/searchClient';
 
 export const locate = async (orn: string) => {
   for (const pattern of Object.values(patterns)) {
@@ -17,12 +18,12 @@ export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: 
   return await asyncPool(concurrency, orn, locate);
 };
 
-export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}) => {
+export const search = async(searchClient: SearchClient, query: string, limit: number = 5) => {
   type Patterns = typeof patterns;
   const result: {[K in keyof Patterns]?: {name: string; items: Awaited<ReturnType<NonNullable<Patterns[K]['search']>>>}} = {};
 
   for (const [key, pattern] of Object.entries(patterns)) {
-    const innerResult = await pattern.search?.(query, limit, filters);
+    const innerResult = await pattern.search?.(searchClient, query, limit);
     if (innerResult && innerResult.length > 0) {
       result[key as keyof Patterns] = {items: innerResult as any, name: pattern.name};
     }

@@ -24,6 +24,7 @@
     "ci": "CI=true npm-run-all ci:*"
   },
   "dependencies": {
+    "@openstax/open-search-client": "^0.1.0-build.7",
     "@openstax/orn-locator": "^1.1.22",
     "@openstax/ts-utils": "1.2.0",
     "aws-sdk": "^2.1145.0",

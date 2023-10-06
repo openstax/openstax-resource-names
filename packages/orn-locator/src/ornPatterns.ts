@@ -1,10 +1,11 @@
 import * as pathToRegexp from 'path-to-regexp';
+import type { SearchClient } from './types/searchClient';
 
 const makePattern = <P extends object, R>({pattern, ...parts}: {
   pattern: string;
   name: string;
   resolve: (params: P) => Promise<R>;
-  search?: (query: string, limit: number, filters: {[key: string]: string | string[]}) => Promise<R[]>;
+  search?: (searchClient: SearchClient, query: string, limit: number) => Promise<R[]>;
 }) => ({
   ...parts,
   format: pathToRegexp.compile<P>(pattern),
@@ -16,7 +17,7 @@ export const patterns = {
     name: 'Libraries',
     pattern: 'https\\://openstax.org/orn/library/:lang?',
     resolve: ({lang}: {lang: string}) => import('./resolvers/books').then(mod => mod.library(lang)),
-    search: (...args) => import('./resolvers/books').then(mod => mod.librarySearch(...args))
+    search: (_searchClient, ...args) => import('./resolvers/books').then(mod => mod.librarySearch(...args))
   }),
   book: makePattern({
     name: 'Books',
