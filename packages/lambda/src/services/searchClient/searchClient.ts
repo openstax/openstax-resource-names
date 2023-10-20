@@ -16,7 +16,7 @@ export const createSearchClient = <C extends string = 'search'>(initializer: Ini
   const config = configProvider[ifDefined(initializer.configSpace, 'search' as C)];
   const searchHost = resolveConfigValue(config.searchHost);
   const getSearchApi = once(async() => new SearchApi(new Configuration({
-    basePath: await searchHost,
+    basePath: `${await searchHost}/api/v0`,
     fetchApi: initializer.fetch,
   })));
 

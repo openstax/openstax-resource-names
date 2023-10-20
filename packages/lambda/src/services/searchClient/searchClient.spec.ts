@@ -3,7 +3,7 @@ import { createSearchClient } from './searchClient';
 
 const config = {
   search: {
-    searchHost: 'asdf',
+    searchHost: 'someHost/open-search',
   }
 };
 
@@ -28,7 +28,7 @@ describe('createSearchClient', () => {
     );
   });
 
-  it('calls fetch with the baseurl', async() => {
+  it('calls fetch on the searchHost', async() => {
     const client = createSearchClient({ fetch: fetchSpy as unknown as GenericFetch })(config);
 
     await client.search({
@@ -38,6 +38,6 @@ describe('createSearchClient', () => {
       searchStrategy: '1',
     });
 
-    expect(fetchSpy.mock.calls[0][0]).toMatchInlineSnapshot('"asdf/search?q=foo&books=book&index_strategy=1&search_strategy=1"');
+    expect(fetchSpy.mock.calls[0][0]).toMatchInlineSnapshot('"someHost/open-search/api/v0/search?q=foo&books=book&index_strategy=1&search_strategy=1"');
   });
 });
