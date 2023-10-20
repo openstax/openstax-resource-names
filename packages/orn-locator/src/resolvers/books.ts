@@ -1,5 +1,5 @@
+import { memoize } from '@openstax/ts-utils';
 import fetch from 'cross-fetch';
-import memoize from 'lodash/fp/memoize';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { isResourceOrContentOfTypeFilter } from '..';
 import { patterns } from '../ornPatterns';
