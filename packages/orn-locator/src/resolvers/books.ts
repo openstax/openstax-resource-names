@@ -1,6 +1,6 @@
+import { memoize } from '@openstax/ts-utils';
 import { assertInstanceOf } from '@openstax/ts-utils/assertions';
 import fetch from 'cross-fetch';
-import memoize from 'lodash/fp/memoize';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { locateAll } from '../resolve';
 import type { SearchClient } from '../types/searchClient';
