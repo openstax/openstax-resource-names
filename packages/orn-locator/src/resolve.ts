@@ -23,6 +23,8 @@ export const search = async(searchClient: SearchClient, query: string, limit: nu
   const result: {[K in keyof Patterns]?: {name: string; items: Awaited<ReturnType<NonNullable<Patterns[K]['search']>>>}} = {};
 
   for (const [key, pattern] of Object.entries(patterns)) {
+    if (pattern.excludeFromDefaultSearch) { continue; }
+
     const innerResult = await pattern.search?.(searchClient, query, limit);
     if (innerResult && innerResult.length > 0) {
       result[key as keyof Patterns] = {items: innerResult as any, name: pattern.name};

@@ -6,6 +6,7 @@ const makePattern = <P extends object, R>({pattern, ...parts}: {
   name: string;
   resolve: (params: P) => Promise<R>;
   search?: (searchClient: SearchClient, query: string, limit: number) => Promise<R[]>;
+  excludeFromDefaultSearch?: boolean;
 }) => ({
   ...parts,
   format: pathToRegexp.compile<P>(pattern),
@@ -17,7 +18,7 @@ export const patterns = {
     name: 'Libraries',
     pattern: 'https\\://openstax.org/orn/library/:lang?',
     resolve: ({lang}: {lang: string}) => import('./resolvers/books').then(mod => mod.library(lang)),
-    search: (_searchClient, ...args) => import('./resolvers/books').then(mod => mod.librarySearch(...args))
+    search: (_searchClient, ...args) => import('./resolvers/books').then(mod => mod.librarySearch(...args)),
   }),
   book: makePattern({
     name: 'Books',
@@ -27,7 +28,7 @@ export const patterns = {
 
       return import('./resolvers/books').then(mod => mod.bookDetail(bookId, bookContentVersion, bookArchiveVersion));
     },
-    search: (...args) => import('./resolvers/books').then(mod => mod.bookSearch(...args))
+    search: (...args) => import('./resolvers/books').then(mod => mod.bookSearch(...args)),
   }),
   'book:subbook': makePattern({
     name: 'Subbooks',
@@ -56,7 +57,7 @@ export const patterns = {
         pageId
       }));
     },
-    search: (...args) => import('./resolvers/books').then(mod => mod.pageSearch(...args))
+    search: (...args) => import('./resolvers/books').then(mod => mod.pageSearch(...args)),
   }),
   'book:page:element': makePattern({
     name: 'Elements',
@@ -72,6 +73,7 @@ export const patterns = {
         elementId
       }));
     },
-    search: (...args) => import('./resolvers/books').then(mod => mod.elementSearch(...args))
+    search: (...args) => import('./resolvers/books').then(mod => mod.elementSearch(...args)),
+    excludeFromDefaultSearch: true,
   }),
 };
