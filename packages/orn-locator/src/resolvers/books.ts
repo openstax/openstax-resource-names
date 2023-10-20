@@ -370,8 +370,8 @@ export const bookSearch = async(searchClient: SearchClient, query: string, limit
 };
 
 export const pageSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Awaited<ReturnType<typeof page>>[]> => {
-  const rexReleases = await getReleaseIds();
-  const results = await doOpenSearch(searchClient, limit, query, rexReleases, 'i3');
+  const releaseIds = await getReleaseIds();
+  const results = await doOpenSearch(searchClient, limit, query, releaseIds, 'i3');
 
   return results.map(result => result.source as unknown as Awaited<ReturnType<typeof page>>);
 };
