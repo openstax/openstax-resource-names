@@ -32,7 +32,7 @@ export const apiV0Search = createRoute({name: 'apiV0Search', method: METHOD.GET,
     searchMiddleware,
   )},
   async(_params: undefined, services) => {
-    const {query: rawQuery, limit: rawLimit} = services.request.queryStringParameters || {};
+    const {query: rawQuery, limit: rawLimit, type} = services.request.queryStringParameters || {};
 
     const query = assertDefined(rawQuery, new InvalidRequestError('an query string is required'));
 
@@ -40,7 +40,7 @@ export const apiV0Search = createRoute({name: 'apiV0Search', method: METHOD.GET,
       ? assertNotNaN(parseInt(rawLimit, 10), new InvalidRequestError('limit must be numeric'))
       : undefined;
 
-    const data = await search(services.searchClient, query, limit);
+    const data = await search(services.searchClient, query, limit, type);
     return apiJsonResponse(200, data);
   }
 );

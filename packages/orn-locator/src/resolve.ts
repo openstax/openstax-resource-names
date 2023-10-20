@@ -18,16 +18,27 @@ export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: 
   return await asyncPool(concurrency, orn, locate);
 };
 
-export const search = async(searchClient: SearchClient, query: string, limit: number = 5) => {
-  type Patterns = typeof patterns;
+type Patterns = typeof patterns;
+
+export const search = async(searchClient: SearchClient, query: string, limit: number = 5, type?: string) => {
   const result: {[K in keyof Patterns]?: {name: string; items: Awaited<ReturnType<NonNullable<Patterns[K]['search']>>>}} = {};
 
-  for (const [key, pattern] of Object.entries(patterns)) {
-    if (pattern.excludeFromDefaultSearch) { continue; }
-
+  const searchPattern = async(key: keyof Patterns, pattern: Patterns[keyof Patterns]) => {
     const innerResult = await pattern.search?.(searchClient, query, limit);
     if (innerResult && innerResult.length > 0) {
       result[key as keyof Patterns] = {items: innerResult as any, name: pattern.name};
+    }
+  };
+
+  if (type) {
+    if (type in patterns) {
+      const key = type as keyof Patterns;
+      await searchPattern(key, patterns[key]);
+    }
+  } else {
+    for (const [key, pattern] of Object.entries(patterns)) {
+      if (pattern.excludeFromDefaultSearch) { continue; }
+      await searchPattern(key as keyof Patterns, pattern);
     }
   }
 
