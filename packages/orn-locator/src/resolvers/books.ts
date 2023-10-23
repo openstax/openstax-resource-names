@@ -33,9 +33,9 @@ export const getArchiveInfo = memoize(async (bookId: string, bookContentVersion?
   };
 });
 
-const getReleaseIds = async () => {
+const getReleaseId = async () => {
   const releaseJson = await getReleaseJson();
-  return [releaseJson.id];
+  return releaseJson.id;
 };
 
 const getBookIds = async () => {
@@ -363,15 +363,15 @@ export const librarySearch = async(query: string, limit: number): Promise<Librar
   return doLocateSearch(query, limit)(libraries.map(libraryData));
 };
 export const bookSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<BookDetail[]> => {
-  const releaseIds = await getReleaseIds();
-  const results = await doOpenSearch(searchClient, limit, query, releaseIds, 'i2');
+  const releaseId = await getReleaseId();
+  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i2');
 
   return results.map(result => result.source as unknown as BookDetail);
 };
 
 export const pageSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Awaited<ReturnType<typeof page>>[]> => {
-  const releaseIds = await getReleaseIds();
-  const results = await doOpenSearch(searchClient, limit, query, releaseIds, 'i3');
+  const releaseId = await getReleaseId();
+  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i3');
 
   return results.map(result => result.source as unknown as Awaited<ReturnType<typeof page>>);
 };
