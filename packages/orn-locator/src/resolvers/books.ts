@@ -1,5 +1,7 @@
-import { memoize } from '@openstax/ts-utils';
+import { SearchResultHitSourceElement } from '@openstax/open-search-client';
+import { memoize, } from '@openstax/ts-utils';
 import { assertInstanceOf } from '@openstax/ts-utils/assertions';
+import { isPlainObject } from '@openstax/ts-utils/guards';
 import fetch from 'cross-fetch';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { locateAll } from '../resolve';
@@ -348,32 +350,66 @@ export const element = async({bookArchiveVersion, bookId, bookContentVersion, pa
   };
 };
 
+// This search type does not actually come from ORN
+const assertElementSearchSource = (input: {}): SearchResultHitSourceElement => {
+  if (isPlainObject(input) &&
+      ['pageId', 'elementType', 'elementId', 'pagePosition'].every((field) => field in input) &&
+      ['pageId', 'elementType', 'elementId'].every((field) => typeof input[field] === 'string') &&
+      typeof input['pagePosition'] === 'number') {
+    return input as SearchResultHitSourceElement;
+  }
+
+  throw new Error('received non-element result from elementSearch');
+};
+
+// ORN-specific type assertions currently just trust the "type" field
+
+const assertBookDetail = (input: {}): BookDetail => {
+  if (isPlainObject(input) && input.type === 'book') {
+    return input as BookDetail;
+  }
+
+  throw new Error('received non-book result from bookSearch');
+};
+
+type Page = Awaited<ReturnType<typeof page>>;
+const assertPage = (input: {}): Page => {
+  if (isPlainObject(input) && input.type === 'book:page') {
+    return input as Page;
+  }
+
+  throw new Error('received non-page result from pageSearch');
+};
+
 export const elementSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Awaited<ReturnType<typeof element>>[]> => {
   const bookIds = await getBookIds();
   const results = await doOpenSearch(searchClient, limit, query, bookIds, 'i1');
 
   return Promise.all(results.map(result => {
     const bookId = assertInstanceOf<string[]>(result.index.match(/__(.*)@/), Array)[1];
-    const pageId = result.source.pageId.split('@')[0];
-    const elementId = result.source.elementId;
+    const source = assertElementSearchSource(result.source);
+    const pageId = source.pageId.split('@')[0];
+    const elementId = source.elementId;
     return element({bookId, pageId, elementId});
   }));
 };
+
 export const librarySearch = async(query: string, limit: number): Promise<LibraryData[]> => {
   return doLocateSearch(query, limit)(libraries.map(libraryData));
 };
+
 export const bookSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<BookDetail[]> => {
   const releaseId = await getReleaseId();
   const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i2');
 
-  return results.map(result => result.source as unknown as BookDetail);
+  return results.map(result => assertBookDetail(result.source));
 };
 
-export const pageSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Awaited<ReturnType<typeof page>>[]> => {
+export const pageSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Page[]> => {
   const releaseId = await getReleaseId();
   const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i3');
 
-  return results.map(result => result.source as unknown as Awaited<ReturnType<typeof page>>);
+  return results.map(result => assertPage(result.source));
 };
 
 const doOpenSearch = async(searchClient: SearchClient, limit: number, q: string, books: string[], indexStrategy: string, searchStrategy = 's1') => {
