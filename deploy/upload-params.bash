@@ -10,6 +10,7 @@ source "$SCRIPT_DIR/bin/init-params-script.bash"
 PARAMS=(
   CookieName
   EncryptionPrivateKey # for decrypt authorization
+  SearchHost
   SignaturePublicKey # for decrypt authorization
 )
 

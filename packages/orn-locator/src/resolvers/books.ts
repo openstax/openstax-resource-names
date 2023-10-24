@@ -1,9 +1,11 @@
-import { memoize } from '@openstax/ts-utils';
+import { SearchResultHitSourceElement } from '@openstax/open-search-client';
+import { memoize, } from '@openstax/ts-utils';
+import { assertInstanceOf } from '@openstax/ts-utils/assertions';
+import { isPlainObject } from '@openstax/ts-utils/guards';
 import fetch from 'cross-fetch';
 import asyncPool from 'tiny-async-pool/lib/es6';
-import { isResourceOrContentOfTypeFilter } from '..';
-import { patterns } from '../ornPatterns';
 import { locateAll } from '../resolve';
+import type { SearchClient } from '../types/searchClient';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
@@ -32,6 +34,11 @@ export const getArchiveInfo = memoize(async (bookId: string, bookContentVersion?
     bookVersion: bookContentVersion || bookConfig.defaultVersion,
   };
 });
+
+const getReleaseId = async () => {
+  const releaseJson = await getReleaseJson();
+  return releaseJson.id;
+};
 
 const getBookIds = async () => {
   const releaseJson = await getReleaseJson();
@@ -215,21 +222,6 @@ const findTreeNode = (predicate: (tree: any) => boolean, tree: any): any => {
   }
 };
 
-const findTreePages = (tree: any): any => {
-  if (!('contents' in tree)) {
-    return [tree];
-  }
-
-  const result = [];
-
-  for (const node of tree.contents) {
-    const withParent = {...node, parent: tree};
-    result.push(...findTreePages(withParent));
-  }
-
-  return result;
-};
-
 type BookDetail = Awaited<ReturnType<typeof bookDetail>>;
 
 const bookDetailAndFriends = async(id: string, version?: string, archive?: string) => {
@@ -358,93 +350,75 @@ export const element = async({bookArchiveVersion, bookId, bookContentVersion, pa
   };
 };
 
-export const elementSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof element>>[]> => {
-  const scopes = 'scope' in filters
-    ? (await locateAll(typeof filters.scope === 'string' ? [filters.scope] : filters.scope))
-      .filter(isResourceOrContentOfTypeFilter(['book']))
-      .map(book => book.id)
-    : (await library('all')).contents.map(book => book.id);
+// This search type does not actually come from ORN
+const assertElementSearchSource = (input: {}): SearchResultHitSourceElement => {
+  if (isPlainObject(input) &&
+      ['pageId', 'elementType', 'elementId', 'pagePosition'].every((field) => field in input) &&
+      ['pageId', 'elementType', 'elementId'].every((field) => typeof input[field] === 'string') &&
+      typeof input['pagePosition'] === 'number') {
+    return input as SearchResultHitSourceElement;
+  }
 
-  const books = await Promise.all(scopes.map(async bookId => {
-    const {archivePath, bookVersion} = await getArchiveInfo(bookId);
-    const archiveVersion = archivePath.replace('/apps/archive/', '');
-    return `${archiveVersion}/${bookId}@${bookVersion}`;
+  throw new Error('received non-element result from elementSearch');
+};
+
+// ORN-specific type assertions currently just trust the "type" field
+
+const assertBookDetail = (input: {}): BookDetail => {
+  if (isPlainObject(input) && input.type === 'book') {
+    return input as BookDetail;
+  }
+
+  throw new Error('received non-book result from bookSearch');
+};
+
+type Page = Awaited<ReturnType<typeof page>>;
+const assertPage = (input: {}): Page => {
+  if (isPlainObject(input) && input.type === 'book:page') {
+    return input as Page;
+  }
+
+  throw new Error('received non-page result from pageSearch');
+};
+
+export const elementSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Awaited<ReturnType<typeof element>>[]> => {
+  const bookIds = await getBookIds();
+  const results = await doOpenSearch(searchClient, limit, query, bookIds, 'i1');
+
+  return Promise.all(results.map(result => {
+    const bookId = assertInstanceOf<string[]>(result.index.match(/__(.*)@/), Array)[1];
+    const source = assertElementSearchSource(result.source);
+    const pageId = source.pageId.split('@')[0];
+    const elementId = source.elementId;
+    return element({bookId, pageId, elementId});
   }));
-
-  return fetch(`https://openstax.org/open-search/api/v0/search?q=${query}&books=${encodeURIComponent(books.join(','))}&index_strategy=i1&search_strategy=s1`)
-    .then(response => response.json())
-    .then(json => json.hits.hits.slice(0, limit) as any[])
-    .then(results => Promise.all(results.map(result => {
-      const bookId = result._index.match(/__(.*)@/)[1];
-      const pageId = result._source.page_id.split('@')[0];
-      const elementId = result._source.element_id;
-      return element({bookId, pageId, elementId});
-    })));
-};
-export const librarySearch = async(query: string, limit: number, _filters: {[key: string]: string | string[]} = {}): Promise<LibraryData[]> => {
-  return doSearch(query, limit)(libraries.map(libraryData));
-};
-export const bookSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<BookDetail[]> => {
-  const bookIds = 'scope' in filters
-    ? (typeof filters.scope === 'string' ? [filters.scope] : filters.scope)
-      .map(bookOrn => {
-        const match = patterns.book.match(bookOrn);
-        if (match) {
-          return match.params.id;
-        }
-
-        return undefined;
-      })
-      .filter(<X>(x: X): x is X & Exclude<undefined, X> => x !== undefined)
-    : await getBookIds();
-
-
-  return Promise.all(bookIds.map((bookId) => book(bookId)))
-    .then(doSearch(query, limit));
-};
-const syncPageSearchData = (archiveBook: any) => (treeNode: any) => {
-  const bookId = archiveBook.id;
-  const pageId = treeNode.id.split('@')[0];
-
-  const contextTitles = recursiveContext(treeNode).map(node => ({
-    id: node.id.split('@')[0],
-    ...titleSplit(node.title),
-    ...mapTocType(node),
-  }));
-  const thisNodeResult = contextTitles.slice(-1)[0];
-
-  return {
-    orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
-    title: thisNodeResult.title,
-    contextTitles: contextTitles.map(item => item.title),
-  };
 };
 
-const archiveBookWithMappedContents = async(id: string) => {
-  const archiveData = await archiveBook(id);
-  return findTreePages(archiveData.tree).map(syncPageSearchData(archiveData));
-};
-export const pageSearch = async(query: string, limit: number, filters: {[key: string]: string | string[]} = {}): Promise<Awaited<ReturnType<typeof page>>[]> => {
-  const bookIds = 'scope' in filters
-    ? (typeof filters.scope === 'string' ? [filters.scope] : filters.scope)
-      .map(bookOrn => {
-        const match = patterns.book.match(bookOrn);
-        if (match) {
-          return match.params.id;
-        }
-
-        return undefined;
-      })
-      .filter(<X>(x: X): x is X & Exclude<undefined, X> => x !== undefined)
-    : await getBookIds();
-
-  return Promise.all(bookIds.map(archiveBookWithMappedContents))
-    .then(results => results.flat())
-    .then(doSearch(query, limit))
-  ;
+export const librarySearch = async(query: string, limit: number): Promise<LibraryData[]> => {
+  return doLocateSearch(query, limit)(libraries.map(libraryData));
 };
 
-const doSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
+export const bookSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<BookDetail[]> => {
+  const releaseId = await getReleaseId();
+  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i2');
+
+  return results.map(result => assertBookDetail(result.source));
+};
+
+export const pageSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Page[]> => {
+  const releaseId = await getReleaseId();
+  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i3');
+
+  return results.map(result => assertPage(result.source));
+};
+
+const doOpenSearch = async(searchClient: SearchClient, limit: number, q: string, books: string[], indexStrategy: string, searchStrategy = 's1') => {
+  const results = await searchClient.search({q, books, indexStrategy, searchStrategy});
+
+  return results.hits.hits.slice(0, limit);
+};
+
+const doLocateSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
   const getScore = parseSearchQuery(query);
   const results = inputs.map(node => ({node, score: getScore(node)}))
     .filter(r => r.score > 0);
@@ -457,6 +431,7 @@ const doSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[
       .map(result => result.node.orn)
   );
 };
+
 const parseSearchQuery = (query: string) => {
   const quotedTerms = [...query.matchAll(/"([^"]+)"/g)].map(match => match[1]);
 

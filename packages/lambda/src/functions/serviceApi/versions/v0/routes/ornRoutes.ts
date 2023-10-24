@@ -1,9 +1,10 @@
 import { locate, locateAll, search } from '@openstax/orn-locator/resolve';
-import { assertDefined, assertNotNaN, assertString } from '@openstax/ts-utils/assertions';
+import { assertDefined, assertNotNaN } from '@openstax/ts-utils/assertions';
 import { InvalidRequestError } from '@openstax/ts-utils/errors';
 import { apiJsonResponse, apiTextResponse, METHOD } from '@openstax/ts-utils/routing';
 import { composeServiceMiddleware, createRoute } from '../../../core/services';
 import { enableTracingMiddleware } from '../middleware/enableTracingMiddleware';
+import { searchMiddleware } from '../middleware/searchMiddleware';
 
 const requestServiceProvider = composeServiceMiddleware(
   enableTracingMiddleware,
@@ -26,9 +27,12 @@ export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: MET
 );
 
 export const apiV0Search = createRoute({name: 'apiV0Search', method: METHOD.GET, path: '/api/v0/search',
-  requestServiceProvider},
+  requestServiceProvider: composeServiceMiddleware(
+    requestServiceProvider,
+    searchMiddleware,
+  )},
   async(_params: undefined, services) => {
-    const {query: rawQuery, limit: rawLimit, ...rawFilters} = services.request.queryStringParameters || {};
+    const {query: rawQuery, limit: rawLimit, type} = services.request.queryStringParameters || {};
 
     const query = assertDefined(rawQuery, new InvalidRequestError('an query string is required'));
 
@@ -36,11 +40,7 @@ export const apiV0Search = createRoute({name: 'apiV0Search', method: METHOD.GET,
       ? assertNotNaN(parseInt(rawLimit, 10), new InvalidRequestError('limit must be numeric'))
       : undefined;
 
-    const filters = Object.fromEntries(Object.entries(rawFilters).map(([key, value]) => [key,
-      typeof value === 'string' && value.indexOf(',') > -1 ? value.split(',') : assertString(value, new InvalidRequestError('filters must be strings'))
-    ]));
-
-    const data = await search(query, limit, filters);
+    const data = await search(services.searchClient, query, limit, type);
     return apiJsonResponse(200, data);
   }
 );

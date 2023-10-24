@@ -3274,6 +3274,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@openstax/open-search-client@^0.1.0-build.8":
+  version "0.1.0-build.8"
+  resolved "https://registry.yarnpkg.com/@openstax/open-search-client/-/open-search-client-0.1.0-build.8.tgz#8a88975e687bfc0640628439fe53fdc69f1fa40c"
+  integrity sha512-rNM1OxQghmNr1B0KfSZFZkOJ2eWZ4UFf8jcDsC5eS6IB5unAvmITW4IjA9vZ7vbSUo8dJ39j7hmc+fTkwc7N+Q==
+
 "@openstax/ts-utils@1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@openstax/ts-utils/-/ts-utils-1.2.0.tgz#da5bdeb688688b4d4ab1a4a919025db736208ee5"
