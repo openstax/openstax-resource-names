@@ -287,6 +287,9 @@ Resources:
         IndexDocument: "does-not-exist.html"
       PublicAccessBlockConfiguration:
         BlockPublicPolicy: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
 
   BucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -361,7 +364,7 @@ Resources:
                 Forward: all
               QueryString: true
             ViewerProtocolPolicy: redirect-to-https
-          
+
           - PathPattern: /orn/*
             TargetOriginId: ApiOrigin
             AllowedMethods:

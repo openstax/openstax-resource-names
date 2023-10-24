@@ -24,6 +24,9 @@ Resources:
           - Id: auto-delete
             Status: Enabled
             ExpirationInDays: 30
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
 
   AnytimeTopic:
     Type: AWS::SNS::Topic

@@ -32,6 +32,9 @@ Resources:
         IndexDocument: "does-not-exist.html"
       PublicAccessBlockConfiguration:
         BlockPublicPolicy: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
 
   ReplicaBucketPolicy:
     Type: AWS::S3::BucketPolicy
