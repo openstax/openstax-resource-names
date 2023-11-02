@@ -14,9 +14,9 @@ interface Initializer<C> {
 
 export const createSearchClient = <C extends string = 'search'>(initializer: Initializer<C>) => (configProvider: {[key in C]: ConfigProviderForConfig<Config>}) => {
   const config = configProvider[ifDefined(initializer.configSpace, 'search' as C)];
-  const searchHost = resolveConfigValue(config.searchHost);
+  const searchHost = once(() => resolveConfigValue(config.searchHost));
   const getSearchApi = once(async() => new SearchApi(new Configuration({
-    basePath: `${await searchHost}/api/v0`,
+    basePath: `${await searchHost()}/api/v0`,
     fetchApi: initializer.fetch,
   })));
 
