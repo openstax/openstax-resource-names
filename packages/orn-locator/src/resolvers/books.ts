@@ -6,6 +6,7 @@ import fetch from 'cross-fetch';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { locateAll } from '../resolve';
 import type { SearchClient } from '../types/searchClient';
+import { acceptResponse } from '../utils/acceptResponse';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
@@ -15,6 +16,7 @@ const preloadedData = (file: string) => import('../data/' + file);
 
 export const getReleaseJson = memoize(async () => preloadedData('release.json').catch(() => {
   return fetch('https://openstax.org/rex/release.json')
+    .then(response => acceptResponse(response))
     .then(response => response.json())
   ;
 }));
@@ -88,12 +90,14 @@ const archiveBook = async(bookId: string, bookContentVersion?: string, bookArchi
   return preloadedData(bookCacheKey(archivePath, bookId, bookVersion))
     .catch(() =>
       fetch(`https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}.json`)
+        .then(response => acceptResponse(response))
         .then(response => response.json())
     );
 };
 
 const commonBook = memoize(async(id: string, version?: string, archive?: string) => {
   const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
+    .then(response => acceptResponse(response))
     .then(response => response.json() as any)
     .then(data => data.items[0])
   ;
@@ -249,6 +253,7 @@ export const subbook = async(
   const {archivePath, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
   const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}.json`;
   const archiveData = await fetch(archiveUrl)
+    .then(response => acceptResponse(response))
     .then(response => response.json())
   ;
 
@@ -308,6 +313,7 @@ const pageWithData = async(
   const {archivePath, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
   const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}:${pageId}.json`;
   const archiveData = await fetch(archiveUrl)
+    .then(response => acceptResponse(response))
     .then(response => response.json())
   ;
 
