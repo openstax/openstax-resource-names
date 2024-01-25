@@ -1,4 +1,4 @@
-import {locate, locateAll, search} from './lookup';
+import { locate, locateAll, search } from './lookup';
 import type { AnyOrnLocateResponse, SearchResponse } from './resolve';
 
 export { locate, locateAll, search };
