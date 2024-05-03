@@ -353,15 +353,12 @@ Resources:
               - PUT
               - PATCH
             Compress: 'true'
-            DefaultTTL: 0
-            MaxTTL: 0
-            MinTTL: 0
+            DefaultTTL: 86400
+            MaxTTL: 86400
+            MinTTL: 86400
             ForwardedValues:
               Headers:
-                - Authorization
                 - Origin
-              Cookies:
-                Forward: all
               QueryString: true
             ViewerProtocolPolicy: redirect-to-https
 
@@ -381,10 +378,7 @@ Resources:
             MinTTL: 86400
             ForwardedValues:
               Headers:
-                - Authorization
                 - Origin
-              Cookies:
-                Forward: all
               QueryString: false
             ViewerProtocolPolicy: redirect-to-https
 
