@@ -1,3 +1,4 @@
+// spell-checker: ignore Orns 
 import { locate, locateAll, search } from '@openstax/orn-locator/resolve';
 import { assertDefined, assertNotNaN } from '@openstax/ts-utils/assertions';
 import { InvalidRequestError } from '@openstax/ts-utils/errors';
