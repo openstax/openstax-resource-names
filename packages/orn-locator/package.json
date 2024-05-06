@@ -1,49 +1,7 @@
 {
   "name": "@openstax/orn-locator",
   "version": "1.2.5",
-  "main": "dist/index.nodejs.js",
   "browser": "dist/index.browser.js",
-  "types": "index.d.ts",
-  "exports": {
-    ".": {
-      "node": "./dist/index.nodejs.js",
-      "browser": "./dist/index.browser.js",
-      "default": "./dist/index.js"
-    },
-    "./resolve": {
-      "node": "./dist/resolve.nodejs.js",
-      "browser": "./dist/resolve.browser.js",
-      "default": "./dist/resolve.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/*",
-        "dist/*.d.ts",
-        "dist/*/index.d.ts"
-      ]
-    }
-  },
-  "license": "MIT",
-  "scripts": {
-    "coverage-report": "open coverage/index.html",
-    "test": "yarn jest",
-    "build:example": "yarn build && yarn webpack -c ./example/webpack.config.js",
-    "start": "./script/build.bash --watch",
-    "clean": "rm -rf dist build",
-    "build": "./script/build.bash",
-    "build:clean": "yarn clean && yarn build",
-    "ci:build": "yarn build --clean",
-    "ci:test": "yarn jest --coverage",
-    "ci:typecheck": "tsc --noEmit",
-    "ci:spelling": "git ls-files | yarn cspell -c ../../cspell.json --file-list stdin",
-    "ci:lint": "eslint --max-warnings=0 .",
-    "ci": "CI=true npm-run-all ci:*"
-  },
   "dependencies": {
     "@openstax/open-search-client": "^0.1.0-build.8",
     "cross-fetch": "^3.1.5",
@@ -71,5 +29,47 @@
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.0",
     "yargs": "^17.5.1"
+  },
+  "exports": {
+    ".": {
+      "node": "./dist/index.nodejs.js",
+      "browser": "./dist/index.browser.js",
+      "default": "./dist/index.js"
+    },
+    "./resolve": {
+      "node": "./dist/resolve.nodejs.js",
+      "browser": "./dist/resolve.browser.js",
+      "default": "./dist/resolve.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.nodejs.js",
+  "scripts": {
+    "build": "./script/build.bash",
+    "build:clean": "yarn clean && yarn build",
+    "build:example": "yarn build && yarn webpack -c ./example/webpack.config.js",
+    "ci": "CI=true npm-run-all ci:*",
+    "ci:build": "yarn build --clean",
+    "ci:lint": "eslint --max-warnings=0 .",
+    "ci:spelling": "git ls-files | yarn cspell -c ../../cspell.json --file-list stdin",
+    "ci:test": "yarn jest --coverage",
+    "ci:typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist build",
+    "coverage-report": "open coverage/index.html",
+    "start": "./script/build.bash --watch",
+    "test": "yarn jest"
+  },
+  "types": "index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/*",
+        "dist/*.d.ts",
+        "dist/*/index.d.ts"
+      ]
+    }
   }
 }
