@@ -1,3 +1,4 @@
+// spell-checker: ignore Orns 
 import * as ornResolveImport from '@openstax/orn-locator/resolve';
 import { apiV0GoToOrn, apiV0LookupOrn, apiV0LookupOrns } from './ornRoutes';
 
