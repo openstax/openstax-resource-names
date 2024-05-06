@@ -1,3 +1,4 @@
+// spell-checker: ignore subbook subbooks
 import * as pathToRegexp from 'path-to-regexp';
 import type { SearchClient } from './types/searchClient';
 
