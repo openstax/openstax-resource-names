@@ -1,4 +1,4 @@
-// spell-checker: ignore Orns 
+// spell-checker: ignore Orns
 import * as ornResolveImport from '@openstax/orn-locator/resolve';
 import { apiV0GoToOrn, apiV0LookupOrn, apiV0LookupOrns } from './ornRoutes';
 
@@ -24,7 +24,7 @@ describe('apiV0GoToOrn', () => {
 }
 `);
   });
-  
+
   it('errors', async() => {
     ornResolve.locate.mockReturnValue(Promise.resolve({}));
     const response = await apiV0GoToOrn.handler({tail: 'foo/bar'}, {} as any);
@@ -97,7 +97,7 @@ describe('apiV0LookupOrns', () => {
 }
 `);
   });
-  
+
   it('throws without parameter', async() => {
     const request = {};
     await expect(() => apiV0LookupOrns.handler(undefined, ({ request } as any))).rejects.toThrowErrorMatchingInlineSnapshot('"an orn query parameter is required"');
