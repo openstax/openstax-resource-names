@@ -3,12 +3,9 @@ import { assertDefined, assertNotNaN } from '@openstax/ts-utils/assertions';
 import { InvalidRequestError } from '@openstax/ts-utils/errors';
 import { apiJsonResponse, apiTextResponse, METHOD } from '@openstax/ts-utils/routing';
 import { composeServiceMiddleware, createRoute } from '../../../core/services';
-import { enableTracingMiddleware } from '../middleware/enableTracingMiddleware';
 import { searchMiddleware } from '../middleware/searchMiddleware';
 
-const requestServiceProvider = composeServiceMiddleware(
-  enableTracingMiddleware,
-);
+const requestServiceProvider = composeServiceMiddleware();
 
 export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: METHOD.GET, path: '/api/v0/orn-lookup',
   requestServiceProvider},
