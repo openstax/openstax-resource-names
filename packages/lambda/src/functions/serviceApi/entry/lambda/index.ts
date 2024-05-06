@@ -1,4 +1,6 @@
 /* spell-checker: ignore avif apng thbs KHTML */
+import './https-xray';
+
 import { APIGatewayProxyEventV2 } from 'aws-lambda/trigger/api-gateway-proxy';
 import { getRequestResponder } from '../../core';
 import { ApiRouteResponse } from '../../core/types';
@@ -52,5 +54,5 @@ import { lambdaMiddleware, lambdaServices } from './services';
  * }
  */
 
-export const handler: (request: APIGatewayProxyEventV2) => Promise<ApiRouteResponse> = 
+export const handler: (request: APIGatewayProxyEventV2) => Promise<ApiRouteResponse> =
   getRequestResponder(lambdaServices, lambdaMiddleware);

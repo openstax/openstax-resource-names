@@ -1,13 +1,13 @@
 import {ReactNode} from 'react';
 import { makeRenderRouteUrl } from '@openstax/ts-utils/routing';
 import { getKeyValue } from '@openstax/ts-utils';
-import { exampleRoutes } from "../example/screens";
 import { makeGetRequestResponder } from '@openstax/ts-utils/routing';
 import { AppServices } from './types';
 import { Location } from "history";
+import { searchRoutes } from "../search";
 
 export const routes = () => ([
-  ...exampleRoutes(),
+  ...searchRoutes(),
 ]);
 
 export type TRoutes = (ReturnType<typeof routes>)[number];

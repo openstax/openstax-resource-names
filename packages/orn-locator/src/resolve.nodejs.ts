@@ -1,3 +1,5 @@
+// spell-checker: ignore domutils
+
 import * as domutils from 'domutils';
 import {parseDocument} from 'htmlparser2';
 import nodeFetch from 'node-fetch';

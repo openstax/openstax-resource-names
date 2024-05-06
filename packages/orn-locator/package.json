@@ -1,9 +1,35 @@
 {
   "name": "@openstax/orn-locator",
   "version": "1.2.5",
-  "main": "dist/index.nodejs.js",
   "browser": "dist/index.browser.js",
-  "types": "index.d.ts",
+  "dependencies": {
+    "@openstax/open-search-client": "^0.1.0-build.8",
+    "cross-fetch": "^3.1.5",
+    "domutils": "^3.0.1",
+    "htmlparser2": "^8.0.1",
+    "node-fetch": "^2.6.7",
+    "path-to-regexp": "^6.2.0",
+    "tiny-async-pool": "^1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.1.1",
+    "@types/node": "^17.0.35",
+    "@types/node-fetch": "^2.6.2",
+    "@types/tiny-async-pool": "1",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "cspell": "^6.12.0",
+    "eslint": "^8.10.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-jest": "^26.1.1",
+    "jest": "^29.1.1",
+    "npm-run-all": "^4.1.5",
+    "ts-jest": "^29.0.3",
+    "typescript": "4.6",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.0",
+    "yargs": "^17.5.1"
+  },
   "exports": {
     ".": {
       "node": "./dist/index.nodejs.js",
@@ -19,6 +45,24 @@
   "files": [
     "dist"
   ],
+  "license": "MIT",
+  "main": "dist/index.nodejs.js",
+  "scripts": {
+    "build": "./script/build.bash",
+    "build:clean": "yarn clean && yarn build",
+    "build:example": "yarn build && yarn webpack -c ./example/webpack.config.js",
+    "ci": "CI=true npm-run-all ci:*",
+    "ci:build": "yarn build --clean",
+    "ci:lint": "eslint --max-warnings=0 .",
+    "ci:spelling": "git ls-files | yarn cspell -c ../../cspell.json --file-list stdin",
+    "ci:test": "yarn jest --coverage",
+    "ci:typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist build",
+    "coverage-report": "open coverage/index.html",
+    "start": "./script/build.bash --watch",
+    "test": "yarn jest"
+  },
+  "types": "index.d.ts",
   "typesVersions": {
     "*": {
       "*": [
@@ -27,49 +71,5 @@
         "dist/*/index.d.ts"
       ]
     }
-  },
-  "license": "MIT",
-  "scripts": {
-    "coverage-report": "open coverage/index.html",
-    "test": "yarn jest",
-    "build:example": "yarn build && yarn webpack -c ./example/webpack.config.js",
-    "start": "./script/build.bash --watch",
-    "clean": "rm -rf dist build",
-    "build": "./script/build.bash",
-    "build:clean": "yarn clean && yarn build",
-    "ci:build": "yarn build --clean",
-    "ci:test": "yarn jest --coverage",
-    "ci:typecheck": "tsc --noEmit",
-    "ci:spelling": "git ls-files | yarn cspell -c ../../cspell.json --file-list stdin",
-    "ci:lint": "eslint --max-warnings=0 .",
-    "ci": "CI=true npm-run-all ci:*"
-  },
-  "dependencies": {
-    "@openstax/open-search-client": "^0.1.0-build.8",
-    "cross-fetch": "^3.1.5",
-    "domutils": "^3.0.1",
-    "htmlparser2": "^8.0.1",
-    "node-fetch": "^2",
-    "path-to-regexp": "^6.2.0",
-    "tiny-async-pool": "1"
-  },
-  "devDependencies": {
-    "@types/jest": "^27.4.1",
-    "@types/node": "^17.0.35",
-    "@types/node-fetch": "^2.6.2",
-    "@types/tiny-async-pool": "1",
-    "@typescript-eslint/eslint-plugin": "^5.13.0",
-    "@typescript-eslint/parser": "^5.13.0",
-    "cspell": "^6.12.0",
-    "eslint": "^8.10.0",
-    "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-jest": "^26.1.1",
-    "jest": "^29.1.1",
-    "npm-run-all": "^4.1.5",
-    "ts-jest": "^29.0.3",
-    "typescript": "v4.6",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.0",
-    "yargs": "^17.5.1"
   }
 }

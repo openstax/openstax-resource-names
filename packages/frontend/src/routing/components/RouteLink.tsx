@@ -3,18 +3,26 @@ import { ParamsForRoute, renderAnyRouteUrl, AnyRoute, QueryParams } from "@opens
 import { useServices } from "../../core/context/services";
 import { TRoutes } from "../../core";
 
+export const isClickWithModifierKeys = (e: React.MouseEvent | MouseEvent) =>
+  e.shiftKey || e.ctrlKey || e.metaKey || e.altKey;
+
 export const createRouteLink = <Ru,>() => <R extends Ru>(
-  params: React.PropsWithChildren<{route: R extends AnyRoute<R> ? R : never; query?: QueryParams}> & (
+  {
+    route, params, query, children, ...props
+  }: React.PropsWithChildren<{route: R extends AnyRoute<R> ? R : never; query?: QueryParams}> & (
     ParamsForRoute<R> extends undefined ? {params?: undefined} : {params: ParamsForRoute<R>}
-  )
+  ) & React.HTMLProps<HTMLAnchorElement>
 ) => {
   const services = useServices();
-  const url = renderAnyRouteUrl<R>(params.route, params.params as ParamsForRoute<R>, params.query);
+  const url = renderAnyRouteUrl<R>(route, params as ParamsForRoute<R>, query);
 
-  return <a href={url} onClick={(e) => {
+  return <a {...props} href={url} onClick={(e) => {
+    if (isClickWithModifierKeys(e) || props.target === '_blank') {
+      return;
+    }
     e.preventDefault();
     services.history.push(url);
-  }}>{params.children}</a>;
+  }}>{children}</a>;
 };
 
 export const RouteLink = createRouteLink<TRoutes>();

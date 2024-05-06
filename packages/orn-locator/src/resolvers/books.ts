@@ -1,3 +1,4 @@
+// spell-checker: ignore subbook browsersafe osweb 
 import { SearchResultHitSourceElement } from '@openstax/open-search-client';
 import { memoize, } from '@openstax/ts-utils';
 import { assertInstanceOf } from '@openstax/ts-utils/assertions';

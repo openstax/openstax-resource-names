@@ -9,18 +9,23 @@ const config = {
   apiBase: () => '/'
 };
 
+export type FrontendConfig = Awaited<ReturnType<ReturnType<typeof loadConfig>>>;
+
+const getApiGateway = (makeApiGateway: ReturnType<typeof createApiGateway>) => {
+  return makeApiGateway<ApiRoutes>(config, routes);
+};
+
+const loadConfig = (apiGateway: ReturnType<typeof getApiGateway>) => async() => {
+  const response = await apiGateway.apiV0Info({});
+  const loadedResponse = await response.acceptStatus(200).load();
+  return loadedResponse.config;
+};
+
 export const frontendConfigProvider = (makeApiGateway: ReturnType<typeof createApiGateway>) => {
-  const apiGateway = makeApiGateway<ApiRoutes>(config, routes);
+  const apiGateway = getApiGateway(makeApiGateway);
+  const getConfig = once(loadConfig(apiGateway));
 
-  const getConfig = once(
-    async() => {
-      const response = await apiGateway.apiV0Info({});
-      const loadedResponse = await response.acceptStatus(200).load();
-      return loadedResponse.config;
-    }
-  );
-
-  const getValue = async(name: string) => {
+  const getValue = async(name: keyof FrontendConfig) => {
     const frontendConfig = await getConfig();
     if (name in frontendConfig) {
       return frontendConfig[name];

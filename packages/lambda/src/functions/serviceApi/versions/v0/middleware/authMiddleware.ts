@@ -1,10 +1,9 @@
 import { envConfig, lambdaParameterConfig, replaceConfig } from '@openstax/ts-utils/config';
-import { Track } from '@openstax/ts-utils/profile';
 import { ApiRouteRequest, AppServices } from '../../../core';
 
 const config = {
   local: {
-    accountsUrl: 'https://dev.openstax.org/accounts/api/user',
+    accountsBase: 'https://dev.openstax.org/accounts',
     cookieName: 'oxa_dev',
   },
   deployed: {
@@ -32,7 +31,7 @@ const config = {
 export const authMiddleware = ({createAuthProvider}: AppServices) => {
   const authProvider = createAuthProvider(config);
 
-  return <M extends {request: ApiRouteRequest; profile: Track}>(middleware: M) => {
+  return <M extends {request: ApiRouteRequest}>(middleware: M) => {
     return {
       ...middleware,
       authProvider: authProvider(middleware)

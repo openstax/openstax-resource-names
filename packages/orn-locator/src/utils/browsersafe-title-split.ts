@@ -1,3 +1,4 @@
+// spell-checker: ignore domutils
 
 declare var globalThis: any;
 declare var window: any | undefined;

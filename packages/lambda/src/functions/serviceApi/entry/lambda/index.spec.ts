@@ -1,6 +1,9 @@
 import { APIGatewayProxyEventV2 } from 'aws-lambda/trigger/api-gateway-proxy';
+import { setContextMissingStrategy } from 'aws-xray-sdk';
 import * as coreModule from '../../core';
 import { handler } from '.';
+
+setContextMissingStrategy('IGNORE_ERROR');
 
 jest.mock('../../core', () => {
   const getRequestResponse = jest.fn();

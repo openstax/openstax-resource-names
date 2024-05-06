@@ -1,60 +1,49 @@
 #!/usr/bin/env bash
 # spell-checker: ignore pipefail
-set -euo pipefail
+set -euo pipefail; if [ -n "${DEBUG-}" ]; then set -x; fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-source "$SCRIPT_DIR/constants.env"
-
-if [ "$#" -lt 1 ]; then
-  cat <<HEREDOC
-
-  Usage: $(basename ${BASH_SOURCE[0]}) <environment>
-
-  Deploys the given $APPLICATION environment
-
-HEREDOC
-
-  exit 1
-fi
+if [ -z "${ENVIRONMENT:-}" ]; then echo "run this command with 'yarn -s ts-utils deploy' instead of executing it directly" > /dev/stderr; exit 1; fi
 
 timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-PATH="$PATH:$SCRIPT_DIR/bin"
 gitVersion=$(git rev-parse HEAD)
-stackName="$1-$APPLICATION"
+stackName="$ENVIRONMENT-$APPLICATION"
 
-export SANDBOX_AWS=373045849756
-export PRODUCTION_AWS=624276253531
-
-accountId=$(aws sts get-caller-identity --output json | jq -r '.Account')
-if [ "$accountId" == "373045849756" ]; then # sandbox account
-  bucketPrefix=sandbox-
-  export REACT_APP_ACCOUNTS_URL='https://dev.openstax.org/'
-elif [ "$accountId" == "624276253531" ]; then # production account
-  bucketPrefix=
-  export REACT_APP_ACCOUNTS_URL='https://openstax.org/'
-else
-  echo "authorized aws account id is not recognized, make sure you're logged in" > /dev/stderr
-  exit 1
-fi
-
-if ! stack-exists "subdomain-$APPLICATION-dns"; then
+# =======
+# shared setup is one per aws account for this project, currently only used for
+# lambda code zip archives and SNS topics for PagerDuty notifications
+# =======
+if ! yarn -s ts-utils stack-exists "subdomain-$APPLICATION-dns"; then
   echo 'DNS stack not found. create one by following the instructions here: https://github.com/openstax/subdomains' > /dev/stderr
   exit 1
 fi
-if ! stack-exists "subdomain-$APPLICATION-cert"; then
+if ! yarn -s ts-utils stack-exists "subdomain-$APPLICATION-cert"; then
   echo 'SSL cert stack not found. create one by following the instructions here: https://github.com/openstax/subdomains' > /dev/stderr
   exit 1
 fi
 
-# =======
-# shared stack is one per aws account for this project, currently only used for
-# lambda code zip archives and SNS topics for PagerDuty notifications
-# =======
-pagerDutyAnytimeEndpoint=$(aws ssm get-parameter --name /external/pager_duty/$APPLICATION/anytime_endpoint \
-                                                 --with-decryption --query 'Parameter.Value' --output text)
-pagerDutyWorkdayEndpoint=$(aws ssm get-parameter --name /external/pager_duty/$APPLICATION/workday_endpoint \
-                                                 --with-decryption --query 'Parameter.Value' --output text)
+pagerDutyAnytimeEndpoint=$(aws ssm get-parameter --name "/external/pager_duty/$APPLICATION/anytime_endpoint" \
+   --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || true)
+pagerDutyWorkdayEndpoint=$(aws ssm get-parameter --name "/external/pager_duty/$APPLICATION/workday_endpoint" \
+   --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || true)
+
+if [ -z "$pagerDutyAnytimeEndpoint" ] || [ -z "$pagerDutyWorkdayEndpoint" ]; then
+  echo "Warning: PagerDuty endpoint(s) not set. You can set them by running: 'yarn -s ts-utils upload-pager-duty-endpoints'" > /dev/stderr
+fi
+
+yarn --check-files
+
+if [ -n "$(git status --porcelain=v1 2>/dev/null)" ]; then
+  echo "please stash, commit, gitignore, or reset your changes before deploying" > /dev/stderr
+  exit 1
+fi
+
+bucketPrefix=
+if [ "$AWS_ACCOUNT" != "openstax" ]; then
+  bucketPrefix="$AWS_ACCOUNT-"
+fi
+
 aws cloudformation deploy \
   --region "$AWS_DEFAULT_REGION" \
   --no-fail-on-empty-changeset \
@@ -65,7 +54,7 @@ aws cloudformation deploy \
     "PagerDutyWorkdayEndpoint=$pagerDutyWorkdayEndpoint" \
   --tags "Project=$PROJECT" "Application=$APPLICATION" 'Environment=shared' "Owner=$OWNER"
 
-codeBucket=$(get-stack-param "$APPLICATION-shared" BucketName)
+codeBucket=$(yarn -s ts-utils get-stack-param "$APPLICATION-shared" BucketName)
 
 # =======
 # build utils code if the package exists in this repo
@@ -103,23 +92,25 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset \
   --template-file "$SCRIPT_DIR/deployment-alt-region.cfn.yml" \
   --stack-name "$stackName" \
-  --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$1" "Owner=$OWNER"
+  --parameter-overrides "BucketPrefix=$bucketPrefix" \
+  --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$ENVIRONMENT" "Owner=$OWNER"
 
-exampleMessage="hello from /api/v0/info"
 # cloudformation cannot reference exports across regions, so these are applied like this
-replicaBucketWebsiteURL=$(AWS_DEFAULT_REGION="$AWS_ALT_REGION" get-stack-param "$stackName" ReplicaBucketWebsiteURL)
+replicaBucketWebsiteURL=$(AWS_DEFAULT_REGION="$AWS_ALT_REGION" yarn -s ts-utils get-stack-param "$stackName" ReplicaBucketWebsiteURL)
 
 aws cloudformation deploy \
   --region "$AWS_DEFAULT_REGION" \
   --template-file "$SCRIPT_DIR/deployment.cfn.yml" \
   --stack-name "$stackName" \
   --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides "CodeBucket=$codeBucket" "ApiCodeKey=$apiCodeKey" "EnvName=$1" "Application=$APPLICATION" "ExampleMessage=$exampleMessage" "ReplicaBucketWebsiteURL=$replicaBucketWebsiteURL" \
-  --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$1" "Owner=$OWNER"
+  --parameter-overrides "BucketPrefix=$bucketPrefix" "CodeBucket=$codeBucket" \
+    "EnvName=$ENVIRONMENT" "Application=$APPLICATION" "ReplicaBucketWebsiteURL=$replicaBucketWebsiteURL" \
+    "ApiCodeKey=$apiCodeKey" \
+  --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$ENVIRONMENT" "Owner=$OWNER"
 
-bucketName=$(get-stack-param "$stackName" StaticBucketName)
-domainName=$(get-stack-param "$stackName" DistributionDomainName)
-distributionId=$(get-stack-param "$stackName" DistributionId)
+bucketName=$(yarn -s ts-utils get-stack-param "$stackName" StaticBucketName)
+domainName=$(yarn -s ts-utils get-stack-param "$stackName" DistributionDomainName)
+distributionId=$(yarn -s ts-utils get-stack-param "$stackName" DistributionId)
 
 # =======
 # build frontend and upload to static site bucket

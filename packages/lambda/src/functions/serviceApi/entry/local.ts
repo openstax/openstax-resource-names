@@ -8,7 +8,7 @@ import {NextFunction, Request, Response} from 'express';
 import fetch from 'node-fetch';
 import queryString from 'query-string';
 import { createSearchClient } from '../../../services/searchClient/searchClient';
-import { composeResponseMiddleware, getRequestResponder, profileReportMiddleware } from '../core/request';
+import { composeResponseMiddleware, getRequestResponder, slowResponseMiddleware } from '../core/request';
 import { ApiRouteRequest } from '../core/types';
 
 // when this runs its from the /build/src dir, so theres an extra up here
@@ -25,7 +25,7 @@ export type LocalServices = typeof services;
 
 export const handler = (request: Request, response: Response, next: NextFunction) => {
   const getRequestResponse = getRequestResponder(services, composeResponseMiddleware(
-    profileReportMiddleware
+    slowResponseMiddleware,
   ));
   const {pathname, search} = url.parse(request.url);
 
@@ -59,6 +59,10 @@ export const handler = (request: Request, response: Response, next: NextFunction
     // TODO - other stuff in the response
     response.status(ifDefined(apiResponse.statusCode, 200));
     response.set(apiResponse.headers);
-    response.end(apiResponse.body);
+
+    response.end(apiResponse.isBase64Encoded
+      ? Buffer.from(apiResponse.body, 'base64')
+      : apiResponse.body
+    );
   });
 };

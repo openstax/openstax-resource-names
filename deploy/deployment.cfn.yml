@@ -1,5 +1,8 @@
 # spell-checker: ignore Keepalive FDTNDATAQYW
 Parameters:
+  BucketPrefix:
+    Description: A prefix to prevent collisions between buckets in different accounts, e.g. sandbox-
+    Type: String
 
   ApiCodeKey:
     Description: S3 key of zip with api function code
@@ -17,10 +20,6 @@ Parameters:
     Description: Which environment this is, e.g. "dev"
     Type: String
 
-  ExampleMessage:
-    Description: Test message to be displayed by the frontend via the frontend config
-    Type: String
-
   ReplicaBucketWebsiteURL:
     Type: String
 
@@ -33,6 +32,10 @@ Conditions:
   IsProduction: !Or
     - !Equals [!Ref EnvName, prod]
     - !Equals [!Ref EnvName, production]
+
+  #IsProductionOrStaging: !Or
+  #  - Condition: IsProduction
+  #  - !Equals [!Ref EnvName, staging]
 
 Resources:
   # ==============
@@ -69,6 +72,7 @@ Resources:
   # ==============
   # Lambda stuff
   # ==============
+
   apiLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -82,7 +86,7 @@ Resources:
       MemorySize: 512
       Timeout: 30 # logging stacktraces is surprisingly heavy
       Role: !GetAtt lambdaIAMRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Environment:
         Variables:
           API_HOST: !Sub
@@ -96,7 +100,6 @@ Resources:
               baseDomain:
                 Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
           ENV_NAME: !Ref EnvName
-          EXAMPLE_MESSAGE: !Ref ExampleMessage
 
   apiLambdaUrl:
     Type: AWS::Lambda::Url
@@ -144,6 +147,14 @@ Resources:
                 Resource: !Sub >-
                   arn:aws:ssm:${AWS::Region}:${AWS::AccountId
                   }:parameter/${Application}/${EnvName}/api/*
+        - PolicyName: xray
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTelemetryRecords
+                  - xray:PutTraceSegments
+                Resource: '*'
 
   lambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -266,12 +277,12 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
     Properties:
-      BucketName: !Sub ${AWS::StackName}-ui-primary-bucket
+      BucketName: !Sub ${BucketPrefix}${AWS::StackName}-ui-primary-bucket
       ReplicationConfiguration:
         Role: !GetAtt [ReplicationRole, Arn]
         Rules:
         - Destination:
-            Bucket: !Sub arn:aws:s3:::${AWS::StackName}-ui-replica-bucket
+            Bucket: !Sub arn:aws:s3:::${BucketPrefix}${AWS::StackName}-ui-replica-bucket
             StorageClass: STANDARD
           Id: Backup
           Prefix: ''
@@ -283,10 +294,10 @@ Resources:
           - Id: MustHaveVersioningButDoNotWantOldVersions
             NoncurrentVersionExpirationInDays: 1
             Status: "Enabled"
-      WebsiteConfiguration:
-        IndexDocument: "does-not-exist.html"
       PublicAccessBlockConfiguration:
         BlockPublicPolicy: false
+      WebsiteConfiguration:
+        IndexDocument: "does-not-exist.html"
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced
@@ -301,7 +312,7 @@ Resources:
             Effect: Allow
             Principal: '*'
             Action: 's3:GetObject'
-            Resource: !Sub arn:aws:s3:::${AWS::StackName}-ui-primary-bucket/*
+            Resource: !Sub arn:aws:s3:::${BucketPrefix}${AWS::StackName}-ui-primary-bucket/*
       Bucket: !Ref Bucket
 
   RewriteFunction:

@@ -11,6 +11,10 @@ Parameters:
     Description: PagerDuty endpoint for Workday notifications
     Type: String
 
+Conditions:
+  HasPagerDutyAnytimeEndpoint: !Not [!Equals [!Ref PagerDutyAnytimeEndpoint, ""]]
+  HasPagerDutyWorkdayEndpoint: !Not [!Equals [!Ref PagerDutyWorkdayEndpoint, ""]]
+
 Resources:
   Bucket:
     Type: AWS::S3::Bucket
@@ -32,17 +36,27 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub ${AWS::StackName}-anytime-topic
-      Subscription:
-        - Endpoint: !Ref PagerDutyAnytimeEndpoint
-          Protocol: https
+
+  AnytimeSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasPagerDutyAnytimeEndpoint
+    Properties:
+      Endpoint: !Ref PagerDutyAnytimeEndpoint
+      Protocol: https
+      TopicArn: !Ref AnytimeTopic
 
   WorkdayTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub ${AWS::StackName}-workday-topic
-      Subscription:
-        - Endpoint: !Ref PagerDutyWorkdayEndpoint
-          Protocol: https
+
+  WorkdaySubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasPagerDutyWorkdayEndpoint
+    Properties:
+      Endpoint: !Ref PagerDutyWorkdayEndpoint
+      Protocol: https
+      TopicArn: !Ref WorkdayTopic
 
   TopicPolicy:
     Type: AWS::SNS::TopicPolicy
