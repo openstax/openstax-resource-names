@@ -10,6 +10,10 @@ module.exports = {
     'src/**/*.{js,ts}',
     'script/**/*.{js,ts}',
   ],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/test/',
+  ],
   coverageReporters: [
     'text-summary',
     'html',
@@ -17,10 +21,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      statements: 87,
       branches: 69,
       functions: 86,
       lines: 85,
+      statements: 87,
     }
   },
   resolver: './jest.resolver.js'

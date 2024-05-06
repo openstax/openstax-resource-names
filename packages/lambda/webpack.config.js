@@ -31,7 +31,9 @@ module.exports = lambdaNames.map(lambdaName => {
   // trying to cover as much as possible without actually wiring up the app
   // to catch all `envConfig` calls without trying to run them.
   require(services)
-  require(routes)
+
+  // require routes if they exist
+  if (fs.existsSync(routes)) { require(routes) }
 
   const env = ENV_BUILD_CONFIGS.splice(0, ENV_BUILD_CONFIGS.length);
 

@@ -6,20 +6,14 @@ project_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd 
 
 cd "$project_dir";
 
-args=("$@")
-function hasArg() {
-  # https://stackoverflow.com/a/61551944/14809536
-  node -e "if (!require('yargs').argv['$1']) { process.exit(1) }" -- yargs "${args[@]+"${args[@]}"}"
-}
-
 build_dir="build"
 tsc_args=(--noEmit false --outDir "$build_dir" --declaration --allowJs )
 
-if hasArg watch; then
+if yarn -s ts-utils has-flag watch "$@"; then
   tsc_args+=(--watch)
 fi
-if hasArg clean; then
+if yarn -s ts-utils has-flag clean "$@"; then
   rm -rf "${build_dir:?}"/*
 fi
 
-yarn tsc "${tsc_args[@]}"
+yarn -s tsc "${tsc_args[@]}"

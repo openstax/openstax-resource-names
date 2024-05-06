@@ -1,4 +1,5 @@
 import { createApiGateway } from "@openstax/ts-utils/services/apiGateway";
+import { createUserRoleValidator } from "@openstax/ts-utils/services/authProvider/utils/userRoleValidator";
 import { ErrorBoundary } from "@openstax/ui-components";
 import { createBrowserHistory, Location } from "history";
 import React from 'react';
@@ -17,11 +18,14 @@ import './index.css';
  * that you wanted to use a fake driver for in dev (or something like that)
  */
 const makeApiGateway = createApiGateway({fetch: fetch.bind(window)});
+const configProvider = frontendConfigProvider(makeApiGateway);
+const authProvider = createAuthProvider({window})(configProvider);
 const services = {
+  authProvider,
+  roleValidator: createUserRoleValidator(authProvider, {application: () => configProvider.getValue('roleApplication')}),
   history: createBrowserHistory(),
-  authProvider: createAuthProvider({window}),
   createApiGateway: makeApiGateway,
-  configProvider: frontendConfigProvider(makeApiGateway),
+  configProvider,
 };
 
 export type BrowserServices = typeof services;

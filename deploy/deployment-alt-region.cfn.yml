@@ -1,3 +1,7 @@
+Parameters:
+  BucketPrefix:
+    Description: A prefix to prevent collisions between buckets in different accounts, e.g. sandbox-
+    Type: String
 
 Conditions:
   # Lambda@Edge functions need to be created in us-east-1; in order for this to be redundant it must be somewhere else
@@ -20,7 +24,7 @@ Resources:
   ReplicaBucket:
     Type: "AWS::S3::Bucket"
     Properties:
-      BucketName: !Sub ${AWS::StackName}-ui-replica-bucket
+      BucketName: !Sub ${BucketPrefix}${AWS::StackName}-ui-replica-bucket
       VersioningConfiguration:
         Status: "Enabled"
       LifecycleConfiguration:
@@ -28,10 +32,10 @@ Resources:
           - Id: MustHaveVersioningButDoNotWantOldVersions
             NoncurrentVersionExpirationInDays: 1
             Status: "Enabled"
-      WebsiteConfiguration:
-        IndexDocument: "does-not-exist.html"
       PublicAccessBlockConfiguration:
         BlockPublicPolicy: false
+      WebsiteConfiguration:
+        IndexDocument: "does-not-exist.html"
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced
@@ -47,7 +51,7 @@ Resources:
             Principal: '*'
             Action:
               - s3:GetObject
-            Resource: !Sub arn:aws:s3:::${AWS::StackName}-ui-replica-bucket/*
+            Resource: !Sub arn:aws:s3:::${BucketPrefix}${AWS::StackName}-ui-replica-bucket/*
 
       Bucket: !Ref ReplicaBucket
 

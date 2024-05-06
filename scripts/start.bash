@@ -6,6 +6,8 @@ project_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd 
 
 cd "$project_dir"
 
+source $(yarn -s ts-utils which init-constants-script)
+
 ./scripts/build.bash
 
 all_packages=$(yarn --silent workspaces info | node -e "process.stdout.write(Object.keys(JSON.parse(require('fs').readFileSync('/dev/stdin').toString())).join(' '))")

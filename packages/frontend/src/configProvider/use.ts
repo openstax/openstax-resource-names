@@ -1,23 +1,26 @@
 import React from 'react';
 import { useServices } from "../core/context/services";
 import { fetchError, FetchStateType, fetchSuccess, fetchLoading, FetchState } from "@openstax/ts-utils/fetch";
-
-export type Config = { [key: string]: string };
+import { FrontendConfig } from ".";
+import { useSetAppError } from '@openstax/ui-components';
 
 export const useFrontendConfig = () => {
   const frontendConfigProvider = useServices().configProvider;
-  const [frontendConfig, setFrontendConfig] = React.useState<FetchState<Config, string>>(fetchLoading());
+  const [frontendConfig, setFrontendConfig] = React.useState<FetchState<FrontendConfig, string>>(fetchLoading());
+  const setAppError = useSetAppError();
 
   React.useEffect(() => {
-    frontendConfigProvider.getConfig().then((ee) => setFrontendConfig(fetchSuccess(ee)));
-  }, [frontendConfigProvider]);
+    frontendConfigProvider.getConfig()
+      .then((ee) => setFrontendConfig(fetchSuccess(ee)))
+      .catch(setAppError);
+  }, [frontendConfigProvider, setAppError]);
 
   return frontendConfig;
 };
 
-export const useFrontendConfigValue = (name: string) => {
+export const useFrontendConfigValue = (name: keyof FrontendConfig) => {
   const [frontendConfigValue, setFrontendConfigValue] = React.useState<
-    FetchState<Config[string], string>
+    FetchState<string, string>
   >(fetchLoading());
   const frontendConfig = useFrontendConfig();
 
@@ -26,7 +29,7 @@ export const useFrontendConfigValue = (name: string) => {
       const data = frontendConfig.data[name];
       setFrontendConfigValue(previous => data
         ? fetchSuccess(data)
-        : fetchError('configuration missing', previous) 
+        : fetchError('configuration missing', previous)
       );
     } else if (frontendConfig.type === FetchStateType.ERROR) {
       setFrontendConfigValue(previous => fetchError('error loading config', previous));

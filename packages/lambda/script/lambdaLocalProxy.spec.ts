@@ -103,7 +103,6 @@ describe('proxy', () => {
     expect(fallback).toHaveBeenCalled();
   });
 
-
   it('responds when app has response', async() => {
     const appResponse = {statusCode: 201, body: 'response' };
     requestResponderSpy.mockReturnValue(Promise.resolve(appResponse));
@@ -113,6 +112,19 @@ describe('proxy', () => {
 
     await request(app).get('/asdf/path/asdf').send()
       .expect(201, 'response');
+
+    expect(requestResponderSpy).toHaveBeenCalled();
+  });
+
+  it('responds when app has encoded response', async() => {
+    const appResponse = {statusCode: 200, body: Buffer.from('response').toString('base64'), isBase64Encoded: true};
+    requestResponderSpy.mockReturnValue(Promise.resolve(appResponse));
+
+    const app = express();
+    proxy(app, 'serviceApi');
+
+    await request(app).get('/asdf/path/asdf').send()
+      .expect(200, 'response');
 
     expect(requestResponderSpy).toHaveBeenCalled();
   });

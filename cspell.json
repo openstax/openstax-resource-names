@@ -3,20 +3,19 @@
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
   "language": "en",
   "words": [
-    "Xapi",
-    "browsersafe",
+    "buildpacks",
     "cloudformation",
-    "domutils",
+    "herokuapp",
+    "Jwks",
+    "jwks",
+    "ltijs",
     "openstax",
-    "orns",
-    "osweb",
     "signup",
     "stax",
-    "subbook",
-    "subbooks",
     "subrequest",
     "subrequests",
-    "systemsmanager"
+    "systemsmanager",
+    "Xapi"
   ],
   "flagWords": [],
   "ignorePaths": [
@@ -24,6 +23,7 @@
     "coverage",
     "package.json",
     "yarn.lock",
-    "node_modules/**"
+    "node_modules/**",
+    "*.svg"
   ]
 }

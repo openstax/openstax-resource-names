@@ -23,7 +23,7 @@ jobs:
 
       - name: Run cfn-lint
         run: cfn-lint **/*.cfn.yml
-  test:
+  spelling:
     name: spelling
     runs-on: ubuntu-latest
     env:
@@ -38,3 +38,18 @@ jobs:
         cache: yarn
     - run: yarn install --immutable
     - run: yarn ci:spelling
+  syncpack:
+    name: versions
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+    - uses: actions/setup-node@v3
+      with:
+        node-version-file: .nvmrc
+        cache: yarn
+    - run: yarn install --immutable
+    - run: yarn ci:versions

@@ -1,0 +1,18 @@
+{
+  "semverGroups": [
+    {
+      "label": "use exact versions",
+      "packages": ["**"],
+      "dependencyTypes": ["**"],
+      "dependencies": ["@openstax/orn", "@openstax/ts-utils", "typescript", "react-scripts", "@project/*", "@openstax/ui-components"],
+      "range": ""
+    },
+    {
+      "label": "use caret ranges",
+      "packages": ["**"],
+      "dependencyTypes": ["prod"],
+      "dependencies": ["**"],
+      "range": "^"
+    }
+  ]
+}

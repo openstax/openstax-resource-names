@@ -1,6 +1,6 @@
 import { getKeyValue } from '@openstax/ts-utils';
-import { createProfile } from '@openstax/ts-utils/profile';
 import { stubAuthProvider, User } from '@openstax/ts-utils/services/authProvider';
+import { createConsoleLogger } from '@openstax/ts-utils/services/logger/console';
 import { ApiRouteRequest, AppServices } from '../../core';
 import { apiV0Index, apiV0Routes } from '.';
 
@@ -19,14 +19,15 @@ afterEach(() => {
 describe('apiV0Index', () => {
   it('matches snapshot', async() => {
     const requestServices = {
-      profile: createProfile('').start(),
+      logger: createConsoleLogger(),
       request,
       environmentConfig: {
         codeVersion: 'code-version-goes-here',
         apiHost: '',
         uiHost: '',
         frontendConfig: {
-          EXAMPLE_MESSAGE: 'hello from /api/v0/info',
+          roleApplication: 'test',
+          accountsBase: 'https://dev.openstax.org/accounts',
         },
       },
       authProvider: stubAuthProvider()
@@ -34,13 +35,13 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"message":"greetings from the api controller","code":"code-version-goes-here","config":{"EXAMPLE_MESSAGE":"hello from /api/v0/info"}}",
+  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
-      "EXAMPLE_MESSAGE": "hello from /api/v0/info",
+      "accountsBase": "https://dev.openstax.org/accounts",
+      "roleApplication": "test",
     },
-    "message": "greetings from the api controller",
   },
   "headers": {
     "content-type": "application/json",
@@ -52,14 +53,15 @@ describe('apiV0Index', () => {
 
   it('matches snapshot with user', async() => {
     const requestServices = {
-      profile: createProfile('').start(),
+      logger: createConsoleLogger(),
       request,
       environmentConfig: {
         codeVersion: 'code-version-goes-here',
         apiHost: '',
         uiHost: '',
         frontendConfig: {
-          EXAMPLE_MESSAGE: 'hello from /api/v0/info',
+          roleApplication: 'test',
+          accountsBase: 'https://dev.openstax.org/accounts',
         },
       },
       authProvider: stubAuthProvider({name: 'test user'} as User)
@@ -68,13 +70,13 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"message":"greetings from the api controller test user","code":"code-version-goes-here","config":{"EXAMPLE_MESSAGE":"hello from /api/v0/info"}}",
+  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
-      "EXAMPLE_MESSAGE": "hello from /api/v0/info",
+      "accountsBase": "https://dev.openstax.org/accounts",
+      "roleApplication": "test",
     },
-    "message": "greetings from the api controller test user",
   },
   "headers": {
     "content-type": "application/json",

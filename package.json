@@ -1,12 +1,20 @@
 {
-  "private": true,
   "name": "@project/template",
+  "version": "1.0.0",
+  "dependencies": {
+    "@openstax/ts-utils": "1.8.0"
+  },
+  "devDependencies": {
+    "syncpack": "^12.3.0"
+  },
+  "private": true,
   "scripts": {
-    "ci:spelling": "git ls-files -- . ':!:packages/' | yarn cspell -c ./cspell.json --file-list stdin",
-    "ci:packages": "./scripts/ci.bash",
+    "build": "./scripts/build.bash",
     "ci": "CI=true npm-run-all ci:*",
-    "start": "./scripts/start.bash",
-    "build": "./scripts/build.bash"
+    "ci:packages": "./scripts/ci.bash",
+    "ci:spelling": "git ls-files -- . ':!:packages/' | yarn cspell -c ./cspell.json --file-list stdin",
+    "ci:versions": "syncpack lint",
+    "start": "./scripts/start.bash"
   },
   "workspaces": [
     "packages/*"
