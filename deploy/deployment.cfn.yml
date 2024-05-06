@@ -1,4 +1,4 @@
-s# spell-checker: ignore Keepalive FDTNDATAQYW
+# spell-checker: ignore Keepalive FDTNDATAQYW
 Parameters:
   BucketPrefix:
     Description: A prefix to prevent collisions between buckets in different accounts, e.g. sandbox-
