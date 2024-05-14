@@ -68,12 +68,14 @@ describe('apiV0LookupOrns', () => {
       {cool: 'result number one'},
       {cool: 'result number two'}
     ]));
+    const ornCacheStore = {};
     const request = {
       queryStringParameters: {orn: 'https://orn.openstax.org/orn/foo/bar,https://orn.openstax.org/orn/bar/baz'}
     };
-    const response = await apiV0LookupOrns.handler(undefined, {request} as any);
+    const response = await apiV0LookupOrns.handler(undefined, {ornCacheStore, request} as any);
 
     expect(ornResolve.locateAll).toHaveBeenCalledWith(
+      ornCacheStore,
       ['https://orn.openstax.org/orn/foo/bar','https://orn.openstax.org/orn/bar/baz'],
       expect.anything()
     );

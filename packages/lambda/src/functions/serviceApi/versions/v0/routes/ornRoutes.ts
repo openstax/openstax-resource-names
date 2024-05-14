@@ -1,12 +1,15 @@
-// spell-checker: ignore Orns 
+// spell-checker: ignore Orns
 import { locate, locateAll, search } from '@openstax/orn-locator/resolve';
 import { assertDefined, assertNotNaN } from '@openstax/ts-utils/assertions';
 import { InvalidRequestError } from '@openstax/ts-utils/errors';
 import { apiJsonResponse, apiTextResponse, METHOD } from '@openstax/ts-utils/routing';
 import { composeServiceMiddleware, createRoute } from '../../../core/services';
+import { ornCacheStoreMiddleware } from '../middleware/ornCacheStore';
 import { searchMiddleware } from '../middleware/searchMiddleware';
 
-const requestServiceProvider = composeServiceMiddleware();
+const requestServiceProvider = composeServiceMiddleware(
+  ornCacheStoreMiddleware,
+);
 
 export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: METHOD.GET, path: '/api/v0/orn-lookup',
   requestServiceProvider},
@@ -16,7 +19,7 @@ export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: MET
       new InvalidRequestError('an orn query parameter is required')
     ).split(',');
 
-    const items = await locateAll(orns, {concurrency: 10});
+    const items = await locateAll(services.ornCacheStore, orns, {concurrency: 10});
 
     return apiJsonResponse(200, {
       items
@@ -38,25 +41,25 @@ export const apiV0Search = createRoute({name: 'apiV0Search', method: METHOD.GET,
       ? assertNotNaN(parseInt(rawLimit, 10), new InvalidRequestError('limit must be numeric'))
       : undefined;
 
-    const data = await search(services.searchClient, query, limit, type);
+    const data = await search(services, query, limit, type);
     return apiJsonResponse(200, data);
   }
 );
 
 export const apiV0LookupOrn = createRoute({name: 'apiV0LookupOrn', method: METHOD.GET, path: '/orn/:tail(.*?).json',
   requestServiceProvider},
-  async({tail}: {tail: string}) => {
+  async({tail}: {tail: string}, services) => {
     const orn = `https://openstax.org/orn/${tail}`;
-    const data = await locate(orn);
+    const data = await locate(services.ornCacheStore, orn);
     return apiJsonResponse(200, data);
   }
 );
 
 export const apiV0GoToOrn = createRoute({name: 'apiV0GoToOrn', method: METHOD.GET, path: '/orn/:tail(.*?)',
   requestServiceProvider},
-  async({tail}: {tail: string}) => {
+  async({tail}: {tail: string}, services) => {
     const orn = `https://openstax.org/orn/${tail}`;
-    const data = await locate(orn);
+    const data = await locate(services.ornCacheStore, orn);
 
     if (!('urls' in data)) {
       return apiTextResponse(400, 'this resource doesn\'t seem to be visitable');

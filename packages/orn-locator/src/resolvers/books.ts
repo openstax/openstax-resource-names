@@ -1,4 +1,4 @@
-// spell-checker: ignore subbook browsersafe osweb 
+// spell-checker: ignore subbook browsersafe osweb
 import { SearchResultHitSourceElement } from '@openstax/open-search-client';
 import { memoize, } from '@openstax/ts-utils';
 import { assertInstanceOf } from '@openstax/ts-utils/assertions';
@@ -6,6 +6,7 @@ import { isPlainObject } from '@openstax/ts-utils/guards';
 import fetch from 'cross-fetch';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { locateAll } from '../resolve';
+import type { OrnCacheStore } from '../types/ornCacheStore';
 import type { SearchClient } from '../types/searchClient';
 import { acceptResponse } from '../utils/acceptResponse';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
@@ -401,8 +402,8 @@ export const elementSearch = async(searchClient: SearchClient, query: string, li
   }));
 };
 
-export const librarySearch = async(query: string, limit: number): Promise<LibraryData[]> => {
-  return doLocateSearch(query, limit)(libraries.map(libraryData));
+export const librarySearch = async(ornCacheStore: OrnCacheStore, query: string, limit: number): Promise<LibraryData[]> => {
+  return doLocateSearch(ornCacheStore, query, limit)(libraries.map(libraryData));
 };
 
 export const bookSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<BookDetail[]> => {
@@ -425,7 +426,7 @@ const doOpenSearch = async(searchClient: SearchClient, limit: number, q: string,
   return results.hits.hits.slice(0, limit);
 };
 
-const doLocateSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
+const doLocateSearch = (ornCacheStore: OrnCacheStore, query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
   const getScore = parseSearchQuery(query);
   const results = inputs.map(node => ({node, score: getScore(node)}))
     .filter(r => r.score > 0);
@@ -433,6 +434,7 @@ const doLocateSearch = (query: string, limit: number) => (inputs: any[]): Promis
   results.sort((a, b) => b.score - a.score);
 
   return locateAll(
+    ornCacheStore,
     results
       .slice(0, limit)
       .map(result => result.node.orn)
