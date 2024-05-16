@@ -19,7 +19,7 @@ export type LambdaServices = typeof lambdaServices;
 
 export const lambdaMiddleware = composeResponseMiddleware(
   createLambdaCorsResponseMiddleware({
-    corsAllowedHostRegex: '(openstax.org|herokuapp.com)$'
+    corsAllowedHostRegex: '(\\.local|localhost|openstax.org|herokuapp.com)$'
   }),
   slowResponseMiddleware,
   createThrowNotFoundMiddleware<ApiRouteResponse>()
