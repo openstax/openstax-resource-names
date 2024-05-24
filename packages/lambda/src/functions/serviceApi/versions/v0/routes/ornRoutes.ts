@@ -11,14 +11,14 @@ const requestServiceProvider = composeServiceMiddleware(searchMiddleware);
 export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: METHOD.GET, path: '/api/v0/orn-lookup',
   requestServiceProvider},
   async(_params: undefined, services) => {
+    const { orn, skipCache } = services.request.queryStringParameters ?? {};
     const options = {
       concurrency: 10,
       searchClient: services.searchClient,
-      skipCache: services.request.queryStringParameters?.skipCache === 'true',
+      skipCache: skipCache === 'true',
     };
     const orns = assertDefined(
-      services.request.queryStringParameters?.orn,
-      new InvalidRequestError('an orn query parameter is required')
+      orn, new InvalidRequestError('an orn query parameter is required')
     ).split(',');
 
     const items = await locateAll(options, orns);
@@ -32,7 +32,7 @@ export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: MET
 export const apiV0Search = createRoute({name: 'apiV0Search', method: METHOD.GET, path: '/api/v0/search',
   requestServiceProvider},
   async(_params: undefined, services) => {
-    const {query: rawQuery, limit: rawLimit, type} = services.request.queryStringParameters || {};
+    const {query: rawQuery, limit: rawLimit, type} = services.request.queryStringParameters ?? {};
 
     const query = assertDefined(rawQuery, new InvalidRequestError('an query string is required'));
 
