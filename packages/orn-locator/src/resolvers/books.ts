@@ -1,11 +1,11 @@
-// spell-checker: ignore subbook browsersafe osweb 
+// spell-checker: ignore subbook browsersafe osweb
 import { SearchResultHitSourceElement } from '@openstax/open-search-client';
 import { memoize, } from '@openstax/ts-utils';
 import { assertInstanceOf } from '@openstax/ts-utils/assertions';
 import { isPlainObject } from '@openstax/ts-utils/guards';
 import fetch from 'cross-fetch';
 import asyncPool from 'tiny-async-pool/lib/es6';
-import { locateAll } from '../resolve';
+import { locateAll, LocateAllOptions } from '../resolve';
 import type { SearchClient } from '../types/searchClient';
 import { acceptResponse } from '../utils/acceptResponse';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
@@ -401,31 +401,37 @@ export const elementSearch = async(searchClient: SearchClient, query: string, li
   }));
 };
 
-export const librarySearch = async(query: string, limit: number): Promise<LibraryData[]> => {
-  return doLocateSearch(query, limit)(libraries.map(libraryData));
+export const librarySearch = async(searchClient: SearchClient, query: string, limit: number): Promise<LibraryData[]> => {
+  return doLocateSearch({searchClient}, query, limit)(libraries.map(libraryData));
 };
 
-export const bookSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<BookDetail[]> => {
+export const bookSearch = async(
+  searchClient: SearchClient, query: string, limit: number, searchStrategy = 's1'
+): Promise<BookDetail[]> => {
   const releaseId = await getReleaseId();
-  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i2');
+  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i2', searchStrategy);
 
   return results.map(result => assertBookDetail(result.source));
 };
 
-export const pageSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Page[]> => {
+export const pageSearch = async(
+  searchClient: SearchClient, query: string, limit: number, searchStrategy = 's1'
+): Promise<Page[]> => {
   const releaseId = await getReleaseId();
-  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i3');
+  const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i3', searchStrategy);
 
   return results.map(result => assertPage(result.source));
 };
 
-const doOpenSearch = async(searchClient: SearchClient, limit: number, q: string, books: string[], indexStrategy: string, searchStrategy = 's1') => {
+const doOpenSearch = async(
+  searchClient: SearchClient, limit: number, q: string, books: string[], indexStrategy: string, searchStrategy = 's1'
+) => {
   const results = await searchClient.search({q, books, indexStrategy, searchStrategy});
 
   return results.hits.hits.slice(0, limit);
 };
 
-const doLocateSearch = (query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
+const doLocateSearch = (options: LocateAllOptions, query: string, limit: number) => (inputs: any[]): Promise<any[]> => {
   const getScore = parseSearchQuery(query);
   const results = inputs.map(node => ({node, score: getScore(node)}))
     .filter(r => r.score > 0);
@@ -433,6 +439,7 @@ const doLocateSearch = (query: string, limit: number) => (inputs: any[]): Promis
   results.sort((a, b) => b.score - a.score);
 
   return locateAll(
+    options,
     results
       .slice(0, limit)
       .map(result => result.node.orn)

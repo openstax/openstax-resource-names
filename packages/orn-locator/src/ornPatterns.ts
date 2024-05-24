@@ -6,8 +6,9 @@ const makePattern = <P extends object, R>({pattern, ...parts}: {
   pattern: string;
   name: string;
   resolve: (params: P) => Promise<R>;
-  search?: (searchClient: SearchClient, query: string, limit: number) => Promise<R[]>;
+  search?: (searchClient: SearchClient, query: string, limit: number, searchStrategy?: string) => Promise<R[]>;
   excludeFromDefaultSearch?: boolean;
+  cacheable?: boolean;
 }) => ({
   ...parts,
   format: pathToRegexp.compile<P>(pattern),
@@ -19,7 +20,7 @@ export const patterns = {
     name: 'Libraries',
     pattern: 'https\\://openstax.org/orn/library/:lang?',
     resolve: ({lang}: {lang: string}) => import('./resolvers/books').then(mod => mod.library(lang)),
-    search: (_searchClient, ...args) => import('./resolvers/books').then(mod => mod.librarySearch(...args)),
+    search: (searchClient, query, limit) => import('./resolvers/books').then(mod => mod.librarySearch(searchClient, query, limit)),
   }),
   book: makePattern({
     name: 'Books',
@@ -30,6 +31,7 @@ export const patterns = {
       return import('./resolvers/books').then(mod => mod.bookDetail(bookId, bookContentVersion, bookArchiveVersion));
     },
     search: (...args) => import('./resolvers/books').then(mod => mod.bookSearch(...args)),
+    cacheable: true,
   }),
   'book:subbook': makePattern({
     name: 'Subbooks',
@@ -59,6 +61,7 @@ export const patterns = {
       }));
     },
     search: (...args) => import('./resolvers/books').then(mod => mod.pageSearch(...args)),
+    cacheable: true,
   }),
   'book:page:element': makePattern({
     name: 'Elements',
@@ -74,7 +77,10 @@ export const patterns = {
         elementId
       }));
     },
-    search: (...args) => import('./resolvers/books').then(mod => mod.elementSearch(...args)),
+    search: (searchClient, query, limit) => import('./resolvers/books').then(mod => mod.elementSearch(searchClient, query, limit)),
     excludeFromDefaultSearch: true,
   }),
 };
+
+const allResolves = Object.values(patterns).map((pattern) => pattern.resolve);
+export type AnyResolvedOrn = Awaited<ReturnType<typeof allResolves[number]>>;
