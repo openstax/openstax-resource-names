@@ -18,7 +18,7 @@ export const locate = async (options: LocateOptions, orn: string) => {
     if (match) {
       if (useCache && pattern.cacheable && pattern.search) {
         const cachedResult = await pattern.search(options.searchClient, orn, 1, 's2');
-        if (cachedResult) { return cachedResult[0]; }
+        if (cachedResult[0]) { return cachedResult[0]; }
       }
       return pattern.resolve(match.params);
     }
