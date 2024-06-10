@@ -5,13 +5,37 @@ import { apiV0GoToOrn, apiV0LookupOrn, apiV0LookupOrns } from './ornRoutes';
 const ornResolve: any = ornResolveImport;
 jest.mock('@openstax/orn-locator/resolve');
 
+let services: any;
+
+beforeEach(() => {
+  services = { request: {} };
+});
 
 describe('apiV0GoToOrn', () => {
   it('goes', async() => {
     ornResolve.locate.mockReturnValue(Promise.resolve({
       urls: {main: 'some url'}
     }));
-    const response = await apiV0GoToOrn.handler({tail: 'foo/bar'}, {} as any);
+    const response = await apiV0GoToOrn.handler({tail: 'foo/bar'}, services);
+    expect(response).toMatchInlineSnapshot(`
+{
+  "body": "redirecting...",
+  "data": "redirecting...",
+  "headers": {
+    "content-type": "text/plain",
+    "location": "some url",
+  },
+  "statusCode": 302,
+}
+`);
+  });
+
+  it('works with skipCache', async() => {
+    ornResolve.locate.mockReturnValue(Promise.resolve({
+      urls: {main: 'some url'}
+    }));
+    services.request.queryStringParameters = { skipCache: 'true' };
+    const response = await apiV0GoToOrn.handler({tail: 'foo/bar'}, services);
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "redirecting...",
@@ -27,7 +51,7 @@ describe('apiV0GoToOrn', () => {
 
   it('errors', async() => {
     ornResolve.locate.mockReturnValue(Promise.resolve({}));
-    const response = await apiV0GoToOrn.handler({tail: 'foo/bar'}, {} as any);
+    const response = await apiV0GoToOrn.handler({tail: 'foo/bar'}, services);
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "this resource doesn't seem to be visitable",
@@ -46,7 +70,27 @@ describe('apiV0LookupOrn', () => {
     ornResolve.locate.mockReturnValue(Promise.resolve({
       some: 'very cool data'
     }));
-    const response = await apiV0LookupOrn.handler({tail: 'foo/bar'}, {} as any);
+    const response = await apiV0LookupOrn.handler({tail: 'foo/bar'}, services);
+    expect(response).toMatchInlineSnapshot(`
+{
+  "body": "{"some":"very cool data"}",
+  "data": {
+    "some": "very cool data",
+  },
+  "headers": {
+    "content-type": "application/json",
+  },
+  "statusCode": 200,
+}
+`);
+  });
+
+  it('works with skipCache', async() => {
+    ornResolve.locate.mockReturnValue(Promise.resolve({
+      some: 'very cool data'
+    }));
+    services.request.queryStringParameters = { skipCache: 'true' };
+    const response = await apiV0LookupOrn.handler({tail: 'foo/bar'}, services);
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "{"some":"very cool data"}",
@@ -68,14 +112,16 @@ describe('apiV0LookupOrns', () => {
       {cool: 'result number one'},
       {cool: 'result number two'}
     ]));
-    const request = {
-      queryStringParameters: {orn: 'https://orn.openstax.org/orn/foo/bar,https://orn.openstax.org/orn/bar/baz'}
+    const searchClient: any = {};
+    services.request.queryStringParameters = {
+      orn: 'https://orn.openstax.org/orn/foo/bar,https://orn.openstax.org/orn/bar/baz'
     };
-    const response = await apiV0LookupOrns.handler(undefined, {request} as any);
+    services.searchClient = searchClient;
+    const response = await apiV0LookupOrns.handler(undefined, services);
 
     expect(ornResolve.locateAll).toHaveBeenCalledWith(
+      {concurrency: 10, searchClient, skipCache: false},
       ['https://orn.openstax.org/orn/foo/bar','https://orn.openstax.org/orn/bar/baz'],
-      expect.anything()
     );
     expect(response).toMatchInlineSnapshot(`
 {
@@ -99,7 +145,6 @@ describe('apiV0LookupOrns', () => {
   });
 
   it('throws without parameter', async() => {
-    const request = {};
-    await expect(() => apiV0LookupOrns.handler(undefined, ({ request } as any))).rejects.toThrowErrorMatchingInlineSnapshot('"an orn query parameter is required"');
+    await expect(() => apiV0LookupOrns.handler(undefined, services)).rejects.toThrowErrorMatchingInlineSnapshot('"an orn query parameter is required"');
   });
 });

@@ -2,20 +2,36 @@ import asyncPool from 'tiny-async-pool/lib/es6';
 import { patterns } from './ornPatterns';
 import type { SearchClient } from './types/searchClient';
 
-export const locate = async (orn: string) => {
+export type LocateOptions = {
+  searchClient: SearchClient;
+  skipCache?: boolean;
+};
+
+export type LocateAllOptions = LocateOptions & { concurrency?: number };
+
+export const locate = async (options: LocateOptions, orn: string) => {
+  const useCache = options.searchClient && !options.skipCache;
+
   for (const pattern of Object.values(patterns)) {
     const match = pattern.match(orn);
 
     if (match) {
-      return await pattern.resolve(match.params);
+      if (useCache && pattern.cacheable && pattern.search) {
+        const cachedResult = await pattern.search(options.searchClient, orn, 1, 's2');
+        if (cachedResult[0]) { return cachedResult[0]; }
+      }
+      return pattern.resolve(match.params);
     }
   }
 
-  return {type: 'not-found', orn} as const;
+  return {type: 'not-found', orn};
 };
 
-export const locateAll = async(orn: string[], {concurrency = 2}: {concurrency?: number} = {}): Promise<AnyOrnLocateResponse[]> => {
-  return await asyncPool(concurrency, orn, locate);
+export const locateAll = async(
+  {concurrency = 2, ...options}: LocateAllOptions, orn: string[]
+): Promise<AnyOrnLocateResponse[]> => {
+  const boundLocate = locate.bind(null, options);
+  return await asyncPool(concurrency, orn, boundLocate);
 };
 
 type Patterns = typeof patterns;
