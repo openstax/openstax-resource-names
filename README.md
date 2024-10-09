@@ -1,89 +1,48 @@
-<!-- spell-checker: ignore creds -->
-## Project Template
+# Openstax Resource Name (ORN)
+ORNs provide a way to universally identify resources. A resource could be a book, a part of a book, a quiz, an ancillary resource, or any other type of thing that we need to define. An ORN may include a UUID, but it will also provide the context necessary to identify the resource type based on the identifier.
 
-SPA React frontend with a serverless lambda backend, supported by aws data stores. fullstack typescript.
+# Try it
+[search all resources](https://openstax.github.io/openstax-resource-names/)
 
-features:
-- monorepo for frontend, lambda functions, deployment scripts
-- strong fullstack typescript support even across api calls
-- one command development server script
-- one command deployment script
-- production ready with error handling, logging, alerting
-- established paradigms for common issues like routing, middleware, pagination, configs, dependency injection, plug-able service drivers per environment
-- service providers for versioned document storage, file storage, document search, openstax accounts auth
-- 100% test coverage using jest in both frontend and lambda modules
-- CI checks for unit tests, spell checking, code linting, code coverage
+# Format
+ORN are defined in [IRI](https://www.w3.org/International/iri-edit/draft-duerst-iri.html) format. We use this format for a few reasons:
+1. we integrate with xAPI systems and that spec requires activities to be identified in IRI format
+1. the format makes it easy to include contextual information to recognize the types of resources
+1. its not necessarily required that the IRI actually resolve to anything if you tried to load it in a browser (many xAPI identifiers don't) but we have the option of someday introducing a little service that would know how to resolve metadata about resources or redirect you to view/manage interfaces for the resource.
 
-## Design Goals
+IRI is a very open ended format, so for ORN we've decided to limit the structure to this:
+> https://openstax.org/orn/{resource-type}/{resource-id}
 
-### Easy and Full Featured
+eg:
+> https://openstax.org/orn/ancillary/031da8d3-b525-429c-80cf-6c8ed997733a
 
-Setting up a new project or microservice using raw libraries or tools like SAM is pretty easy, but leaves a lot of problems unsolved. developers end up having to solve a lot of problems over and over again, or cutting corners. There are, surprisingly, not a lot of software frameworks designed to work in a serverless environment, so every time you need to figure out how do error logging, or routing. maybe there is a lot of copy/paste there once you've done it a few times, but not everyone has done it a few times, and its still a project if you have. Sometimes you think you can quickly bang out a service that does xyz, and it doesn't need any frills, but then it turns out it sure would have been nice to have a data store, or an admin interface, and it doesn't send any alerts when it has errors, and that takes the project into a whole new problem space.
+> https://openstax.org/orn/assessment/031da8d3-b525-429c-80cf-6c8ed997733a
 
-This project aims to provide a baseline level of production-readiness, in addition to easily accessible prebuilt functionality for common problems.
+> https://openstax.org/orn/content:page/031da8d3-b525-429c-80cf-6c8ed997733a:1d1fd537-77fb-4eac-8a8a-60bbaa747b6d
 
-### Cohesive
+> https://openstax.org/orn/content:book/031da8d3-b525-429c-80cf-6c8ed997733a
 
-A big problem in the javascript world is lack of cohesive systems. for any given problem there are a thousand npm modules that could help you, but given a set of problems, finding solutions that can work well together is a challenge.
+> https://openstax.org/orn/content:learning-objective/031da8d3-b525-429c-80cf-6c8ed997733a:1d1fd537-77fb-4eac-8a8a-60bbaa747b6d:id-1231
 
-This project aims to provide a full stack developer experience using similar tools and patterns across the project, and typescript support as strong as we can make it.
+each resource type can use whatever identifier format is most useful. the ID should provide enough information to be able to locate the resource given the understanding of the ID format. It won't be expected that the knowledge of how to interpret these IRI will need to be reproduced in all the places that they are used, we may provide tools such as shared libraries, or a small microservice, to help interpret them in a centralized way.
 
+for example identifying a learning objective with only a uuid or element id doesn't help you locate its definition, you need to know where in the content to find it, so we can create a better identifier by concatenating the source content with the learning objective id. eg:
+> https://openstax.org/orn/content:learning-objective/{book_uuid}:{page_uuid}:{element_id}
 
-## Getting Started with the Project Template
+# Versioning Resources
 
-### Set up your repo
-- clone this repo
-- delete packages/utils (it'll pull it from npm) (this isn't true yet, don't do this)
-- reset the git history (delete .git and run `git init; git commit -am "initial commit"` again)
-- follow the [development](#development) instructions to start your local environment
+It would be fine for a resource type to include a version identifier on its id, for instance in our content it might look normal do do something like:
+> https://openstax.org/orn/content:book/031da8d3-b525-429c-80cf-6c8ed997733a@asdfb
 
-### Get into the Code
-- start checking out the api code from the [routes file](./packages/lambda/src/functions/serviceApi/versions/v0/example/routes.ts). this example provides basic entity data storage, there are lots of comments in there.
-- start checking out the frontend code from the [homepage](./packages/frontend/src/example/screens/Home.tsx), there are a few pages that integrate with the example api routes.
-- more info about the libraries and utils used in the [utils module](./packages/utils/README.md)
+But be careful before doing this by default, depending on usage it may be more correct to use the ORN to indicate the resource _in general_ and not a single version in particular. For instance a typical usage of an ORN would be to indicate that a particular video is about or supports a certain part of the textbook content, the video would hold an ORN to the content, and then you can filter videos by content. In this case you don't want to have to update the video every time a new version of the content is published.
 
-### your first deployment
-- change the `APPLICATION` in [the deployment constants file](./deploy/constants.env). the first time you run the deployment it'll
-walk you through some one-time setup stuff. it'll output the deployed url when it finishes.
-- upload some secrets to the parameter store with `AccountsBase=SOMETHING CookieName=SOMETHING EncryptionPrivateKey=SOMETHING SignaturePublicKey=SOMETHING yarn ts-utils upload-params <environment-name>`.
-- (optional) set PagerDuty params with `yarn -s ts-utils upload-pager-duty-endpoints`
+# Purpose
+Openstax has a variety of content and activity types using different technologies and different formats. These resources are usually about other resources. This can be in a direct way, like exercises that assess the knowledge learned by reading a certain section of content or watching a certain video or performing a certain activity, or in a dependent way, like topics that build on knowledge from other topics. In any case, we have a need to be able to create a graph of our various content resources and that starts with being able to universally identify, recognize, and locate those resources.
 
-## Development
-
-install [nvm](https://github.com/creationix/nvm#installation)
-
-```
-
-# use the right version of node
-nvm install
-
-# install yarn, skip if you have it already
-npm install -g yarn
-
-# install dependencies
-yarn install
-
-# start
-#  run this from the project root, it builds the utils and lambda packages,
-#  sets up build watchers for them, and then starts the react app.
-#  changes in any package are built and visible in the app immediately.
-yarn start
-```
-
-### to fix scary untrusted cert warning in chrome
-
-*note:* you must do this for login to work
-
-#### trust the certificate
-- run `./packages/frontend/script/trust-localhost.bash` after starting the server
-
-## Deployment
-
-dependencies: aws-sdk, jq
-
-```
-# if you don't have https://github.com/openstax/ox-bin set up you can call this directly from
-# your local https://github.com/openstax/aws-access/blob/main/scripts/set_aws_creds
-. ox set_aws_creds -i assume-role -r sandbox:full-admin
-yarn -s ts-utils deploy my-cool-environment
-```
+# This Repository
+use this repository to:
+- create github issues and have discussions about how to identify different types of resources
+- write code for the serialization and/or de-serialization of resources to IRI
+- publish that code in re-usable libraries so that tools/apps can easily work with resources/iri to generate iri and extract metadata
+- publish that code in a microservice so that tools/apps can choose to integrate with that instead of a library
+- define a standard interface for resource metadata like name/description/etc
