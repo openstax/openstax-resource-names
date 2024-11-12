@@ -16,6 +16,12 @@ const makePattern = <P extends object, R>({pattern, ...parts}: {
 });
 
 export const patterns = {
+  ancillary: makePattern({
+    name: 'Ancillaries',
+    pattern: 'https\\://openstax.org/orn/ancillary/:id',
+    resolve: ({id}: {id: string}) => import('./resolvers/ancillaries').then(mod => mod.ancillary(id)),
+    search: (_searchClient, query, limit) => import('./resolvers/ancillaries').then(mod => mod.search(query, limit)),
+  }),
   library: makePattern({
     name: 'Libraries',
     pattern: 'https\\://openstax.org/orn/library/:lang?',
