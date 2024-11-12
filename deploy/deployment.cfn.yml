@@ -1,4 +1,10 @@
 # spell-checker: ignore Keepalive FDTNDATAQYW
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W6001
+
 Parameters:
   BucketPrefix:
     Description: A prefix to prevent collisions between buckets in different accounts, e.g. sandbox-
