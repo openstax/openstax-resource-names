@@ -99,7 +99,7 @@ Resources:
             - ${subDomain}${baseDomain}
             - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
               baseDomain:
-                Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
+                Fn::ImportValue: !Sub subdomain-ancillaries-hosted-zone-name
           API_HOST: !Sub
             - ${subDomain}${baseDomain}
             - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
