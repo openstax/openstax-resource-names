@@ -96,8 +96,8 @@ Resources:
       Environment:
         Variables:
           ANCILLARIES_HOST: !Sub
-            - ${subDomain}${baseDomain}
-            - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
+            - ${envDomain}ancillaries.${baseDomain}
+            - envDomain: !If [IsProduction, '', !Sub '${EnvName}.']
               baseDomain:
                 Fn::ImportValue: !Sub subdomain-ancillaries-hosted-zone-name
           API_HOST: !Sub
