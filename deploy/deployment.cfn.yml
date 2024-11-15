@@ -96,7 +96,7 @@ Resources:
       Environment:
         Variables:
           ANCILLARIES_HOST: !Sub
-            - ${envDomain}ancillaries.${baseDomain}
+            - https://${envDomain}.${baseDomain}
             - envDomain: !If [IsProduction, '', !Sub '${EnvName}.']
               baseDomain:
                 Fn::ImportValue: subdomain-ancillaries-hosted-zone-name
