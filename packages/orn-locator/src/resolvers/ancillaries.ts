@@ -26,7 +26,7 @@ function formatAncillaryData(data: any) {
     ancillaryType: {
       name: data.type.name as string,
       id: data.type.id as string,
-      timesamp: data.type.timestamp as string,
+      timestamp: data.type.timestamp as string,
       ...('icon' in data.type ? {icon: {url: ancillariesHost + data.type.icon.url}}: {})
     },
     urls: {
