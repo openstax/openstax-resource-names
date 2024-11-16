@@ -95,6 +95,11 @@ Resources:
       Runtime: nodejs18.x
       Environment:
         Variables:
+          ANCILLARIES_HOST: !Sub
+            - https://${envDomain}${baseDomain}
+            - envDomain: !If [IsProduction, '', !Sub '${EnvName}.']
+              baseDomain:
+                Fn::ImportValue: subdomain-ancillaries-hosted-zone-name
           API_HOST: !Sub
             - ${subDomain}${baseDomain}
             - subDomain: !If [IsProduction, '', !Sub '${EnvName}.']
