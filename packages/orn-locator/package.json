@@ -1,6 +1,6 @@
 {
   "name": "@openstax/orn-locator",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "browser": "dist/index.browser.js",
   "dependencies": {
     "@openstax/open-search-client": "^0.1.0-build.8",
