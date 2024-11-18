@@ -24,7 +24,7 @@ export const locate = async (options: LocateOptions, orn: string) => {
     }
   }
 
-  return {type: 'not-found', orn};
+  return {type: 'not-found', orn} as const;
 };
 
 export const locateAll = async(

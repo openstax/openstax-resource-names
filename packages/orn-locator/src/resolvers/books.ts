@@ -291,7 +291,7 @@ const syncPageNodeData = (page: any, archiveBook: any, bookContentVersion?: stri
   const thisNodeResult = contextNodes.slice(-1)[0];
 
   return {
-    ...thisNodeResult,
+    ...thisNodeResult as TreePageElement,
     context: contextNodes
       .filter(context => context.tocType && context.id !== pageId)
       .reduce((result, item) => ({...result, [item.tocType]: item}), {} as {[key: string]: TreeNodeDataWithoutChildren}),
