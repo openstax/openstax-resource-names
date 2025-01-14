@@ -106,7 +106,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
   const archiveData = await archiveBook(id, version, archive);
   const default_page_slug = oswebData.webview_rex_link.match(/\/books\/.*\/pages\/(.*)$/)?.[1] as string;
   const default_page = default_page_slug && findTreeNodeBySlug(default_page_slug, archiveData.tree);
-  const subject = oswebData.book_subjects ? oswebData.book_subjects[0]?.subject_name : "";
+  const subject = oswebData.book_subjects ? oswebData.book_subjects[0]?.subject_name : '';
 
   return {
     oswebData,
