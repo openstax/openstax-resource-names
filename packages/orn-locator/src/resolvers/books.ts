@@ -11,7 +11,7 @@ import { acceptResponse } from '../utils/acceptResponse';
 import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
-const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,promote_image,webview_rex_link,cover_url,title_image_url';
+const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,book_subjects,promote_image,webview_rex_link,cover_url,title_image_url';
 
 const preloadedData = (file: string) => import('../data/' + file);
 
@@ -106,6 +106,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
   const archiveData = await archiveBook(id, version, archive);
   const default_page_slug = oswebData.webview_rex_link.match(/\/books\/.*\/pages\/(.*)$/)?.[1] as string;
   const default_page = default_page_slug && findTreeNodeBySlug(default_page_slug, archiveData.tree);
+  const subject = oswebData.book_subjects ? oswebData.book_subjects[0]?.subject_name : "";
 
   return {
     oswebData,
@@ -117,6 +118,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
       type: 'book' as const,
       state: oswebData.book_state as string,
       title: oswebData.title as string,
+      subject: subject as string,
       language: archiveData.language as string,
       slug: oswebData.meta.slug as string,
       default_page: default_page ? mapTree(id, version, archive)(default_page) : undefined,
