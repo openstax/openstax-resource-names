@@ -79,7 +79,8 @@ const Search = () => {
   const doSearch = React.useCallback((data: Partial<SearchData>) => {
 
     apiClient.apiV0Search({query: data})
-      .then(response => response.acceptStatus(200).load())
+      .then(response => response.acceptStatus(200))
+      .then(response => response.load())
       .then(result => setResultState(fetchSuccess(result)))
       .catch(setAppError);
   }, [apiClient, setAppError]);
@@ -93,11 +94,11 @@ const Search = () => {
     {stateHasData(resultState) ?
       <UI.Tabs size='large'>
       <UI.TabList aria-label="Items">
-        {Object.entries(resultState.data).map(([key, result]) => 
+        {Object.entries(resultState.data).map(([key, result]) =>
           <UI.Tab key={key} id={key}>{result.name}</UI.Tab>
         )}
       </UI.TabList>
-        
+
       {Object.entries(resultState.data).map(([key, result]) => <StyledTabPanel key={key} id={key}>
         <ol>
           {result.items.map(item => <li key={item.orn}>

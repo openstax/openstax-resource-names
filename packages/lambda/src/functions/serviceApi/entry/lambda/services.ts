@@ -2,7 +2,7 @@ import { getKeyValue } from '@openstax/ts-utils';
 import { createLambdaCorsResponseMiddleware } from '@openstax/ts-utils/middleware/lambdaCorsResponseMiddleware';
 import { createThrowNotFoundMiddleware } from '@openstax/ts-utils/middleware/throwNotFoundMiddleware';
 import { decryptionAuthProvider } from '@openstax/ts-utils/services/authProvider/decryption';
-import { dynamoVersionedDocumentStore } from '@openstax/ts-utils/services/versionedDocumentStore/dynamodb';
+import { dynamoVersionedDocumentStore } from '@openstax/ts-utils/services/documentStore/versioned/dynamodb';
 import fetch from 'node-fetch';
 import { createSearchClient } from '../../../../services/searchClient/searchClient';
 import { composeResponseMiddleware, slowResponseMiddleware } from '../../core/request';

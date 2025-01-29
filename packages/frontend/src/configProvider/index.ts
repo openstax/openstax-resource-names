@@ -17,7 +17,7 @@ const getApiGateway = (makeApiGateway: ReturnType<typeof createApiGateway>) => {
 
 const loadConfig = (apiGateway: ReturnType<typeof getApiGateway>) => async() => {
   const response = await apiGateway.apiV0Info({});
-  const loadedResponse = await response.acceptStatus(200).load();
+  const loadedResponse = await (await response.acceptStatus(200)).load();
   return loadedResponse.config;
 };
 
