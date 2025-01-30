@@ -3,7 +3,7 @@ import url from 'url';
 import { getKeyValue } from '@openstax/ts-utils';
 import { ifDefined } from '@openstax/ts-utils/guards';
 import { subrequestAuthProvider } from '@openstax/ts-utils/services/authProvider/subrequest';
-import { fileSystemVersionedDocumentStore } from '@openstax/ts-utils/services/versionedDocumentStore/file-system';
+import { fileSystemVersionedDocumentStore } from '@openstax/ts-utils/services/documentStore/versioned/file-system';
 import {NextFunction, Request, Response} from 'express';
 import fetch from 'node-fetch';
 import queryString from 'query-string';

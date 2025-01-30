@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@openstax/orn-locator": "^1.3.3",
-    "@openstax/ts-utils": "1.8.0",
-    "@openstax/ui-components": "https://github.com/openstax/ui-components#1.7.3",
+    "@openstax/ts-utils": "1.19.0",
+    "@openstax/ui-components": "https://github.com/openstax/ui-components#1.12.0",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",
     "@testing-library/user-event": "^13.2.1",
