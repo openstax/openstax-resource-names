@@ -1,3 +1,9 @@
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E3033
+
 Parameters:
   BucketPrefix:
     Description: A prefix to prevent collisions between buckets in different accounts, e.g. sandbox-
