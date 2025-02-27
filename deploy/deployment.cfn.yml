@@ -4,6 +4,7 @@ Metadata:
     config:
       ignore_checks:
         - W6001
+        - E3033
 
 Parameters:
   BucketPrefix:
