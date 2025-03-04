@@ -30,7 +30,7 @@ function formatAncillaryData(data: any) {
       ...('icon' in data.type ? {icon: {url: ancillariesHost + data.type.icon.url}}: {})
     },
     urls: {
-      main: ancillariesHost + data.defaultFormat.latestUrl
+      main: data.defaultFormat ? ancillariesHost + data.defaultFormat.latestUrl : ''
     },
   };
 }
