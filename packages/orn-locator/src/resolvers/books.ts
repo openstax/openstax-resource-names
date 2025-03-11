@@ -72,9 +72,10 @@ const libraryData = (language: string) => {
 };
 
 export const library = async(language: string = 'all') => {
-  const bookIds = await getBookIds();
+  const liveBookIds = await cacheLiveOswebBooks();
+  const bookIds = (await getBookIds()).filter((bookId) => liveBookIds.includes(bookId));
   const contents: Book[] = (await asyncPool(2, bookIds, (bookId: string) => book(bookId))).filter((book: Book) =>
-    (language === 'all' || book.language === language) && book.state === 'live'
+    language === 'all' || book.language === language
   );
 
   return {
@@ -99,8 +100,30 @@ const archiveBook = async(bookId: string, bookContentVersion?: string, bookArchi
 type BookSubject = { id: number; subject_name: string };
 type BookCategory = { id: number; subject_name: string; subject_category: string };
 
+const cachedLiveOswebBooks: Record<string, any> = {};
+// Returns the cnx_ids of live books
+const cacheLiveOswebBooks = async() => {
+  let total_count = 1;
+  let offset = 0;
+  while (offset < total_count) {
+    const responseData =
+      await fetch(`${oswebUrl}?type=books.Book&book_state=live&fields=${fields}&offset=${offset}&limit=100`)
+      .then((response) => acceptResponse(response))
+      .then((response => response.json()));
+
+    const { items } = responseData;
+    if (items.length === 0) { break; }
+    items.forEach((item: { cnx_id: string }) => { cachedLiveOswebBooks[item.cnx_id] = item; });
+
+    total_count = responseData.meta.total_count;
+    offset += items.length;
+  }
+  return Object.keys(cachedLiveOswebBooks);
+};
+
 const commonBook = memoize(async(id: string, version?: string, archive?: string) => {
-  const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
+  const oswebData = cachedLiveOswebBooks[id] ??
+    await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
     .then(response => acceptResponse(response))
     .then(response => response.json() as any)
     .then(data => data.items[0])
