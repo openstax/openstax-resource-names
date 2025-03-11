@@ -45,5 +45,5 @@ EOF
   openssl req -newkey rsa:2048 -keyout "$host.pvk" -out "$host.req" -subj /CN="$host" -sha256 -nodes
   openssl x509 -req \
     -CA "$shared_certificate_dir/CA.cer" -CAkey "$shared_certificate_dir/CA.pvk" \
-    -in "$host.req" -out "$host.cer" -days 397 -extfile "$host.ext" -sha256 -set_serial 0x1111
+    -in "$host.req" -out "$host.cer" -days 397 -extfile "$host.ext" -sha256
 fi

@@ -4,7 +4,10 @@ const path = require('path');
 const {assertDefined} = require('@openstax/ts-utils/assertions');
 const {ENV_BUILD_CONFIGS} = require('@openstax/ts-utils/config');
 const nodeBuiltins = require('builtin-modules');
+const TerserPlugin = require('terser-webpack-plugin');
 const webpack = require('webpack');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 
 // we need to run the code to get the ENV configs, so build it now
 // to make sure its up to date
@@ -24,9 +27,12 @@ const externals = ['aws-sdk', 'aws-crt']
   }, {});
 
 module.exports = lambdaNames.map(lambdaName => {
-  const entry = path.join(__dirname, lambdaDir, `${lambdaName}/entry/lambda`)
-  const services = path.join(__dirname, lambdaDir, `${lambdaName}/entry/lambda/services`)
-  const routes = path.join(__dirname, lambdaDir, `${lambdaName}/core/routes`)
+  const lambdaPath = path.join(__dirname, lambdaDir, lambdaName);
+  const entryPath = path.join(lambdaPath, 'entry', 'lambda');
+  const webpackConfigPath = path.join(entryPath, 'webpack.config.js');
+  const outputPath = path.join(__dirname, 'dist', lambdaName);
+  const services = path.join(entryPath, 'services');
+  const routes = path.join(lambdaPath, 'core', 'routes');
 
   // trying to cover as much as possible without actually wiring up the app
   // to catch all `envConfig` calls without trying to run them.
@@ -37,17 +43,29 @@ module.exports = lambdaNames.map(lambdaName => {
 
   const env = ENV_BUILD_CONFIGS.splice(0, ENV_BUILD_CONFIGS.length);
 
+  if (fs.existsSync(webpackConfigPath)) { return require(webpackConfigPath)({lambdaName, entryPath, outputPath, env}) }
+
   return {
-    entry: ['source-map-support/register', entry],
+    entry: ['source-map-support/register', entryPath],
     externals,
 
     output: {
-      path: path.join(__dirname, 'dist', lambdaName),
+      path: outputPath,
       libraryTarget: 'commonjs',
-      filename: 'index.js'
+      filename: 'index.js',
     },
 
     target: 'node',
+    mode: 'production',
+
+    optimization: {
+      concatenateModules: true,
+      minimize: true,
+      minimizer: [new TerserPlugin({ terserOptions: {
+          mangle: false
+        },
+      })],
+    },
 
     module: {
       rules: [
@@ -73,6 +91,7 @@ module.exports = lambdaNames.map(lambdaName => {
         })))
       }),
       new webpack.ProgressPlugin(),
+      ...(lambdaName === process.env.DEBUG_MODULES ? [new BundleAnalyzerPlugin()] : []),
     ],
   }
 });

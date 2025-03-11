@@ -22,7 +22,7 @@ jobs:
         run: pip install cfn-lint
 
       - name: Run cfn-lint
-        run: cfn-lint **/*.cfn.yml
+        run: cfn-lint
   spelling:
     name: spelling
     runs-on: ubuntu-latest

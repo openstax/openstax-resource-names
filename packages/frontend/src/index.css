@@ -21,8 +21,23 @@ code {
   height: 100%;
 }
 
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
 * {
   box-sizing: border-box;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&display=swap');

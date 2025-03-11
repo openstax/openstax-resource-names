@@ -71,7 +71,7 @@ describe('proxy', () => {
       }
     }));
   });
-  
+
   it('passes multi value query params to app responder', async() => {
     const app = express();
     proxy(app, 'serviceApi');
@@ -127,5 +127,21 @@ describe('proxy', () => {
       .expect(200, 'response');
 
     expect(requestResponderSpy).toHaveBeenCalled();
+  });
+
+  it('works for empty path and queryString', async() => {
+    const app = express();
+    proxy(app, 'serviceApi');
+
+    await request(app).get('');
+
+    expect(requestResponderSpy).toHaveBeenCalledWith(expect.objectContaining({
+      requestContext: {
+        http: {
+          method: 'GET',
+          path: '/',
+        }
+      },
+    }));
   });
 });

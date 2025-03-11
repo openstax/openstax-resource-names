@@ -2,6 +2,7 @@ Metadata:
   cfn-lint:
     config:
       ignore_checks:
+        - W6001
         - E3033
 
 Parameters:
@@ -55,9 +56,8 @@ Resources:
           - Sid: PublicReadForGetBucketObjects
             Effect: Allow
             Principal: '*'
-            Action:
-              - s3:GetObject
-            Resource: !Sub arn:aws:s3:::${BucketPrefix}${AWS::StackName}-ui-replica-bucket/*
+            Action: s3:GetObject
+            Resource: !Sub ${ReplicaBucket.Arn}/*
 
       Bucket: !Ref ReplicaBucket
 

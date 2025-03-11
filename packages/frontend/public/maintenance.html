@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- spell-checker: ignore TFCS -->
+    <meta charset="utf-8" />
+    <title>OpenStax</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="OpenStax"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        'os.release_id':'%REACT_APP_CODE_VERSION%',
+        'os.app':'%REACT_APP_NAME%',
+        'os.user':window._OX_USER_DATA,
+      });
+    </script>
+
+    <style>
+      html {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 62.5%;
+        text-size-adjust: 100%;
+      }
+      body {
+        padding: 3rem;
+        font-size: 1.6rem;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h3 {
+        font-weight: 400;
+        font-size: 2.2rem;
+        margin-top: 0;
+      }
+    </style>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-W6N7PB');</script>
+    <!-- End Google Tag Manager -->
+  </head>
+  <body></body>
+</html>

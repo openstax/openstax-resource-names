@@ -1,9 +1,11 @@
 import path from 'path';
 import url from 'url';
 import { getKeyValue } from '@openstax/ts-utils';
+import { assertString } from '@openstax/ts-utils/assertions';
 import { ifDefined } from '@openstax/ts-utils/guards';
 import { subrequestAuthProvider } from '@openstax/ts-utils/services/authProvider/subrequest';
 import { fileSystemVersionedDocumentStore } from '@openstax/ts-utils/services/documentStore/versioned/file-system';
+import { localFileServer } from '@openstax/ts-utils/services/fileServer/localFileServer';
 import {NextFunction, Request, Response} from 'express';
 import fetch from 'node-fetch';
 import queryString from 'query-string';
@@ -15,10 +17,11 @@ import { ApiRouteRequest } from '../core/types';
 const dataDir = path.join(__dirname, '../../../../../data');
 
 const services = {
+  createAuthProvider: subrequestAuthProvider({configSpace: 'local', fetch}),
+  createFileServer: localFileServer({configSpace: 'local', dataDir}),
+  createSearchClient: createSearchClient({configSpace: 'local', fetch}),
   getEnvironmentConfig: getKeyValue('local'),
   versionedDocumentStore: fileSystemVersionedDocumentStore({dataDir}),
-  createAuthProvider: subrequestAuthProvider({configSpace: 'local', fetch}),
-  createSearchClient: createSearchClient({configSpace: 'local', fetch}),
 };
 
 export type LocalServices = typeof services;
@@ -44,7 +47,7 @@ export const handler = (request: Request, response: Response, next: NextFunction
     requestContext: {
       http: {
         method: request.method,
-        path: pathname
+        path: decodeURIComponent(assertString(pathname, new Error('invalid request.url'))),
       }
     }
   } as ApiRouteRequest;
