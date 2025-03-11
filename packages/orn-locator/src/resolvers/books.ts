@@ -72,6 +72,7 @@ const libraryData = (language: string) => {
 };
 
 export const library = async(language: string = 'all') => {
+  await cacheAllOswebBooks();
   const bookIds = await getBookIds();
   const contents: Book[] = (await asyncPool(2, bookIds, (bookId: string) => book(bookId))).filter((book: Book) =>
     (language === 'all' || book.language === language) && book.state === 'live'
@@ -99,8 +100,26 @@ const archiveBook = async(bookId: string, bookContentVersion?: string, bookArchi
 type BookSubject = { id: number; subject_name: string };
 type BookCategory = { id: number; subject_name: string; subject_category: string };
 
+const cachedOswebBooks: Record<string, any> = {};
+const cacheAllOswebBooks = async() => {
+  let total_count = 1;
+  let offset = 0;
+  while (offset < total_count) {
+    const responseData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&offset=${offset}&limit=100`)
+      .then((response) => acceptResponse(response))
+      .then((response => response.json()));
+
+    const { items } = responseData;
+    if (items.length === 0) { break; }
+    items.forEach((item: { cnx_id: string }) => { cachedOswebBooks[item.cnx_id] = item; });
+
+    total_count = responseData.meta.total_count;
+    offset += items.length;
+  }
+};
+
 const commonBook = memoize(async(id: string, version?: string, archive?: string) => {
-  const oswebData = await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
+  const oswebData = cachedOswebBooks[id] ?? await fetch(`${oswebUrl}?type=books.Book&fields=${fields}&cnx_id=${id}`)
     .then(response => acceptResponse(response))
     .then(response => response.json() as any)
     .then(data => data.items[0])
