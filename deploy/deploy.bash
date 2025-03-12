@@ -85,6 +85,31 @@ apiCodeKey="api-$timestamp.zip"
 aws s3 cp "dist/serviceApi.zip" "s3://$codeBucket/$apiCodeKey"
 
 # =======
+# build frontend and upload to static site bucket
+# =======
+cd "$SCRIPT_DIR"/../packages/frontend
+
+export REACT_APP_CODE_VERSION="$CODE_VERSION"
+export REACT_APP_NAME="$APPLICATION"
+export PUBLIC_URL="/build"
+
+# =======
+# try to read domainName from the stack
+# =======
+if yarn -s ts-utils stack-exists "$stackName"; then
+  previouslyDeployed=1
+  bucketName=$(yarn -s ts-utils get-stack-param "$stackName" StaticBucketName)
+  domainName=$(yarn -s ts-utils get-stack-param "$stackName" DistributionDomainName)
+  export REACT_APP_API_BASE_URL="https://${domainName}"
+  yarn build:clean
+  aws s3 sync build "s3://${bucketName}${PUBLIC_URL}" --region "$AWS_DEFAULT_REGION"
+else
+  previouslyDeployed=0
+fi
+
+cd "$SCRIPT_DIR"/../packages/lambda
+
+# =======
 # main deployment includes alt region for fail over
 # =======
 aws cloudformation deploy \
@@ -115,13 +140,12 @@ distributionId=$(yarn -s ts-utils get-stack-param "$stackName" DistributionId)
 # =======
 # build frontend and upload to static site bucket
 # =======
-cd "$SCRIPT_DIR"/../packages/frontend
-
 export REACT_APP_API_BASE_URL="https://${domainName}"
-export PUBLIC_URL="/build"
 
-yarn build:clean
-
+cd "$SCRIPT_DIR"/../packages/frontend
+if [ $previouslyDeployed -eq 0 ]; then
+  yarn build:clean
+fi
 aws s3 sync build "s3://${bucketName}${PUBLIC_URL}" --delete --region "$AWS_DEFAULT_REGION"
 
 aws cloudfront create-invalidation --distribution-id "$distributionId" --paths "/*" --output text --query "Invalidation.Status"

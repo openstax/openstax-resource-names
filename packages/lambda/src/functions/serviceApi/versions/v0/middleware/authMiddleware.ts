@@ -1,4 +1,5 @@
 import { envConfig, lambdaParameterConfig, replaceConfig } from '@openstax/ts-utils/config';
+import type { Logger } from '@openstax/ts-utils/services/logger';
 import { ApiRouteRequest, AppServices } from '../../../core';
 
 const config = {
@@ -31,7 +32,7 @@ const config = {
 export const authMiddleware = ({createAuthProvider}: AppServices) => {
   const authProvider = createAuthProvider(config);
 
-  return <M extends {request: ApiRouteRequest}>(middleware: M) => {
+  return <M extends {request: ApiRouteRequest; logger: Logger}>(middleware: M) => {
     return {
       ...middleware,
       authProvider: authProvider(middleware)

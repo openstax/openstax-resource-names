@@ -1,8 +1,8 @@
 import React from 'react';
-import { useServices } from "../core/context/services";
-import { fetchError, FetchStateType, fetchSuccess, fetchLoading, FetchState } from "@openstax/ts-utils/fetch";
-import { FrontendConfig } from ".";
+import { fetchError, FetchStateType, fetchSuccess, fetchLoading, FetchState } from '@openstax/ts-utils/fetch';
 import { useSetAppError } from '@openstax/ui-components';
+import { FrontendConfig } from '.';
+import { useServices } from '../core/context/services';
 
 export const useFrontendConfig = () => {
   const frontendConfigProvider = useServices().configProvider;
