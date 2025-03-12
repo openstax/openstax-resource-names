@@ -43,7 +43,7 @@ const getReleaseId = async () => {
   return releaseJson.id;
 };
 
-const getBookIds = async () => {
+const getReleaseBookIds = async () => {
   const releaseJson = await getReleaseJson();
   return Object.entries(releaseJson.books)
     .filter(([, config]: [any, any]) => config.retired !== true)
@@ -72,11 +72,9 @@ const libraryData = (language: string) => {
 };
 
 export const library = async(language: string = 'all') => {
-  const liveBookIds = await cacheLiveOswebBooks();
-  const bookIds = (await getBookIds()).filter((bookId) => liveBookIds.includes(bookId));
-  const contents: Book[] = (await asyncPool(2, bookIds, (bookId: string) => book(bookId))).filter((book: Book) =>
-    language === 'all' || book.language === language
-  );
+  const liveBookIds = (await cacheLiveOswebBooks(language)).map((bk) => bk.cnx_id);
+  const bookIds = (await getReleaseBookIds()).filter((bookId) => liveBookIds.includes(bookId));
+  const contents: Book[] = (await asyncPool(2, bookIds, (bookId: string) => book(bookId)));
 
   return {
     ...libraryData(language),
@@ -101,24 +99,28 @@ type BookSubject = { id: number; subject_name: string };
 type BookCategory = { id: number; subject_name: string; subject_category: string };
 
 const cachedLiveOswebBooks: Record<string, any> = {};
-// Returns the cnx_ids of live books
-const cacheLiveOswebBooks = async() => {
+// Loads and returns live books matching the given language
+// Loaded books are cached for later use by commonBook()
+const cacheLiveOswebBooks = async(language: string) => {
+  const apiBaseUrl = `${oswebUrl}?type=books.Book&book_state=live&fields=${fields}&limit=100`;
+  const apiUrl = language === 'all' ? apiBaseUrl : `${apiBaseUrl}&locale=${language}`;
+  const books = [];
   let total_count = 1;
   let offset = 0;
   while (offset < total_count) {
-    const responseData =
-      await fetch(`${oswebUrl}?type=books.Book&book_state=live&fields=${fields}&offset=${offset}&limit=100`)
+    const responseData = await fetch(`${apiUrl}&offset=${offset}`)
       .then((response) => acceptResponse(response))
       .then((response => response.json()));
 
     const { items } = responseData;
     if (items.length === 0) { break; }
-    items.forEach((item: { cnx_id: string }) => { cachedLiveOswebBooks[item.cnx_id] = item; });
+    books.push(...items);
 
     total_count = responseData.meta.total_count;
     offset += items.length;
   }
-  return Object.keys(cachedLiveOswebBooks);
+  books.forEach((book: { cnx_id: string }) => { cachedLiveOswebBooks[book.cnx_id] = book; });
+  return books;
 };
 
 const commonBook = memoize(async(id: string, version?: string, archive?: string) => {
@@ -425,7 +427,7 @@ const assertPage = (input: {}): Page => {
 };
 
 export const elementSearch = async(searchClient: SearchClient, query: string, limit: number): Promise<Awaited<ReturnType<typeof element>>[]> => {
-  const bookIds = await getBookIds();
+  const bookIds = await getReleaseBookIds();
   const results = await doOpenSearch(searchClient, limit, query, bookIds, 'i1');
 
   return Promise.all(results.map(result => {
