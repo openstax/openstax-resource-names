@@ -12,7 +12,7 @@ interface Initializer<C> {
   fetch: GenericFetch;
 }
 
-export const createSearchClient = <C extends string = 'search'>(initializer: Initializer<C>) => (configProvider: {[key in C]: ConfigProviderForConfig<Config>}) => {
+export const createSearchContentClient = <C extends string = 'search'>(initializer: Initializer<C>) => (configProvider: {[key in C]: ConfigProviderForConfig<Config>}) => {
   const config = configProvider[ifDefined(initializer.configSpace, 'search' as C)];
   const searchHost = once(() => resolveConfigValue(config.searchHost));
   const getSearchApi = once(async() => new SearchApi(new Configuration({

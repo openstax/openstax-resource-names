@@ -1,5 +1,5 @@
 import { GenericFetch } from '@openstax/ts-utils/fetch';
-import { createSearchClient } from './searchClient';
+import { createSearchContentClient } from './searchContentClient';
 
 const config = {
   search: {
@@ -29,7 +29,7 @@ describe('createSearchClient', () => {
   });
 
   it('calls fetch on the searchHost', async() => {
-    const client = createSearchClient({ fetch: fetchSpy as unknown as GenericFetch })(config);
+    const client = createSearchContentClient({ fetch: fetchSpy as unknown as GenericFetch })(config);
 
     await client.search({
       books: ['book'],

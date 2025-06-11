@@ -1,6 +1,6 @@
 import { createApiGateway } from "@openstax/ts-utils/services/apiGateway";
 import { createUserRoleValidator } from "@openstax/ts-utils/services/authProvider/utils/userRoleValidator";
-import { ErrorBoundary } from "@openstax/ui-components";
+import { ErrorBoundary, createSentryLogger } from "@openstax/ui-components";
 import { createBrowserHistory, Location } from "history";
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -22,6 +22,7 @@ const configProvider = frontendConfigProvider(makeApiGateway);
 const authProvider = createAuthProvider({window})(configProvider);
 const services = {
   authProvider,
+  logger: createSentryLogger(),
   roleValidator: createUserRoleValidator(authProvider, {application: () => configProvider.getValue('roleApplication')}),
   history: createBrowserHistory(),
   createApiGateway: makeApiGateway,

@@ -4,7 +4,8 @@ Metadata:
     config:
       ignore_checks:
         - W6001
-        - E3033
+        - E3031 # we do this on purpose
+        - E3033 # we do this on purpose
 
 Parameters:
   BucketPrefix:
@@ -28,6 +29,22 @@ Parameters:
     Type: String
 
   ReplicaBucketWebsiteURL:
+    Type: String
+
+  CookieName:
+    Description: Name of the cookie used for authentication
+    Type: String
+
+  AccountsBase:
+    Description: Base URL for the accounts service
+    Type: String
+
+  SignaturePublicKey:
+    Description: Public key used for signature verification
+    Type: String
+    
+  SearchHost:
+    Description: Base URL for the search service
     Type: String
 
 Conditions:
@@ -93,7 +110,7 @@ Resources:
       MemorySize: 512
       Timeout: 30 # logging stacktraces is surprisingly heavy
       Role: !GetAtt lambdaIAMRole.Arn
-      Runtime: nodejs18.x
+      Runtime: nodejs22.x
       Environment:
         Variables:
           ANCILLARIES_HOST: !Sub
@@ -113,6 +130,10 @@ Resources:
                 Fn::ImportValue: !Sub subdomain-${Application}-hosted-zone-name
           ENV_NAME: !Ref EnvName
           FRONTEND_BUILD_BUCKET: !Ref Bucket
+          COOKIE_NAME: !Ref CookieName
+          ACCOUNTS_BASE: !Ref AccountsBase
+          SIGNATURE_PUBLIC_KEY: !Ref SignaturePublicKey
+          SEARCH_HOST: !Ref SearchHost
 
   apiLambdaUrl:
     Type: AWS::Lambda::Url
@@ -405,6 +426,9 @@ Resources:
             MinTTL: 86400
             ForwardedValues:
               Headers:
+                - Authorization
+                - X-Request-ID
+                - X-Launch-Token
                 - Origin
               QueryString: true
             ViewerProtocolPolicy: redirect-to-https
@@ -525,6 +549,10 @@ Resources:
           MaxTTL: 31536000
           MinTTL: 0
           ForwardedValues:
+            Headers:
+              - Authorization
+              - X-Request-ID
+              - X-Launch-Token
             Cookies:
               Forward: all
             QueryString: 'true'

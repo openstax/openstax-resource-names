@@ -15,10 +15,10 @@ export const config = {
   },
 };
 
-export const searchMiddleware = ({createSearchClient}: AppServices) => {
-  const searchClient = createSearchClient(config);
+export const searchContentMiddleware = ({createSearchContentClient}: AppServices) => {
+  const searchContentClient = createSearchContentClient(config);
 
   return <M extends {}>(middleware: M) => {
-    return { ...middleware, searchClient };
+    return { ...middleware, searchContentClient };
   };
 };

@@ -4,9 +4,9 @@ import { assertDefined, assertNotNaN } from '@openstax/ts-utils/assertions';
 import { InvalidRequestError } from '@openstax/ts-utils/errors';
 import { apiJsonResponse, apiTextResponse, METHOD } from '@openstax/ts-utils/routing';
 import { composeServiceMiddleware, createRoute } from '../../../core/services';
-import { searchMiddleware } from '../middleware/searchMiddleware';
+import { searchContentMiddleware } from '../middleware/searchContentMiddleware';
 
-const requestServiceProvider = composeServiceMiddleware(searchMiddleware);
+const requestServiceProvider = composeServiceMiddleware(searchContentMiddleware);
 
 export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: METHOD.GET, path: '/api/v0/orn-lookup',
   requestServiceProvider},
@@ -14,7 +14,7 @@ export const apiV0LookupOrns = createRoute({name: 'apiV0LookupOrns', method: MET
     const { orn, skipCache } = services.request.queryStringParameters ?? {};
     const options = {
       concurrency: 10,
-      searchClient: services.searchClient,
+      searchClient: services.searchContentClient,
       skipCache: skipCache === 'true',
     };
     const orns = assertDefined(
@@ -40,7 +40,7 @@ export const apiV0Search = createRoute({name: 'apiV0Search', method: METHOD.GET,
       ? assertNotNaN(parseInt(rawLimit, 10), new InvalidRequestError('limit must be numeric'))
       : undefined;
 
-    const data = await search(services.searchClient, query, limit, type);
+    const data = await search(services.searchContentClient, query, limit, type);
     return apiJsonResponse(200, data);
   }
 );
@@ -49,7 +49,7 @@ export const apiV0LookupOrn = createRoute({name: 'apiV0LookupOrn', method: METHO
   requestServiceProvider},
   async({tail}: {tail: string}, services) => {
     const options = {
-      searchClient: services.searchClient,
+      searchClient: services.searchContentClient,
       skipCache: services.request.queryStringParameters?.skipCache === 'true',
     };
     const orn = `https://openstax.org/orn/${tail}`;
@@ -62,7 +62,7 @@ export const apiV0GoToOrn = createRoute({name: 'apiV0GoToOrn', method: METHOD.GE
   requestServiceProvider},
   async({tail}: {tail: string}, services) => {
     const options = {
-      searchClient: services.searchClient,
+      searchClient: services.searchContentClient,
       skipCache: services.request.queryStringParameters?.skipCache === 'true',
     };
     const orn = `https://openstax.org/orn/${tail}`;
