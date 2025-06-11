@@ -112,15 +112,15 @@ describe('apiV0LookupOrns', () => {
       {cool: 'result number one'},
       {cool: 'result number two'}
     ]));
-    const searchClient: any = {};
+    const searchContentClient: any = {};
     services.request.queryStringParameters = {
       orn: 'https://orn.openstax.org/orn/foo/bar,https://orn.openstax.org/orn/bar/baz'
     };
-    services.searchClient = searchClient;
+    services.searchContentClient = searchContentClient;
     const response = await apiV0LookupOrns.handler(undefined, services);
 
     expect(ornResolve.locateAll).toHaveBeenCalledWith(
-      {concurrency: 10, searchClient, skipCache: false},
+      {concurrency: 10, searchClient: searchContentClient, skipCache: false},
       ['https://orn.openstax.org/orn/foo/bar','https://orn.openstax.org/orn/bar/baz'],
     );
     expect(response).toMatchInlineSnapshot(`

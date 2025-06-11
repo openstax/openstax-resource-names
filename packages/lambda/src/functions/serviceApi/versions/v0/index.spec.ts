@@ -103,9 +103,13 @@ describe('buildIndex', () => {
           accountsBase: 'https://dev.openstax.org/accounts',
         },
       },
-      frontendFileServer: { getFileContent: async() => Buffer.from(
-        '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
-      ) },
+      frontendFileServer: {
+        putFileContent: jest.fn(),
+        getSignedViewerUrl: jest.fn(),
+        getFileContent: async() => Buffer.from(
+          '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
+        )
+      },
       logger: createConsoleLogger(),
       request,
     };
@@ -140,7 +144,10 @@ describe('buildIndex', () => {
           accountsBase: 'https://dev.openstax.org/accounts',
         },
       },
-      frontendFileServer: { getFileContent: async() => Buffer.from(
+      frontendFileServer: {
+        putFileContent: jest.fn(),
+        getSignedViewerUrl: jest.fn(),
+        getFileContent: async() => Buffer.from(
         '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
       ) },
       logger: createConsoleLogger(),
@@ -150,10 +157,16 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
-        <script>window._OX_USER_DATA = {"name":"test user","consent_preferences":{"accepted":["test"],"rejected":["nothing"]}};</script>
+        <script>
+          window._OX_AUTH_TOKEN = 'authToken';
+          window._OX_USER_DATA = {"name":"test user","consent_preferences":{"accepted":["test"],"rejected":["nothing"]}};
+        </script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "data": "<html><head>
-        <script>window._OX_USER_DATA = {"name":"test user","consent_preferences":{"accepted":["test"],"rejected":["nothing"]}};</script>
+        <script>
+          window._OX_AUTH_TOKEN = 'authToken';
+          window._OX_USER_DATA = {"name":"test user","consent_preferences":{"accepted":["test"],"rejected":["nothing"]}};
+        </script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
@@ -177,7 +190,10 @@ describe('buildIndex', () => {
           accountsBase: 'https://dev.openstax.org/accounts',
         },
       },
-      frontendFileServer: { getFileContent: async() => Buffer.from(
+      frontendFileServer: {
+        putFileContent: jest.fn(),
+        getSignedViewerUrl: jest.fn(),
+        getFileContent: async() => Buffer.from(
         '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
       ) },
       logger: createConsoleLogger(),
@@ -203,6 +219,8 @@ describe('buildIndex', () => {
 describe('makeIndexHtmlBody', () => {
   it('matches snapshot with maintenance message', async () => {
     const response = await makeIndexHtmlBody({
+      putFileContent: jest.fn(),
+      getSignedViewerUrl: jest.fn(),
       getFileContent: async () => Buffer.from(
         '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
       )

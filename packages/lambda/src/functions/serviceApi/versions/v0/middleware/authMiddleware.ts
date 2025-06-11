@@ -8,24 +8,14 @@ const config = {
     cookieName: 'oxa_dev',
   },
   deployed: {
-    cookieName: lambdaParameterConfig(
-      replaceConfig('/[app]/[env]/api/CookieName', {
-        '[app]': envConfig('APPLICATION'),
-        '[env]': envConfig('ENV_NAME', 'runtime')
-      })
-    ),
+    cookieName: envConfig('COOKIE_NAME', 'runtime'),
     encryptionPrivateKey: lambdaParameterConfig(
       replaceConfig('/[app]/[env]/api/EncryptionPrivateKey', {
         '[app]': envConfig('APPLICATION'),
         '[env]': envConfig('ENV_NAME', 'runtime')
       })
     ),
-    signaturePublicKey: lambdaParameterConfig(
-      replaceConfig('/[app]/[env]/api/SignaturePublicKey', {
-        '[app]': envConfig('APPLICATION'),
-        '[env]': envConfig('ENV_NAME', 'runtime')
-      })
-    ),
+    signaturePublicKey: envConfig('SIGNATURE_PUBLIC_KEY', 'runtime'),
   },
 };
 

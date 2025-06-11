@@ -3,7 +3,8 @@ Metadata:
     config:
       ignore_checks:
         - W6001
-        - E3033
+        - E3031 # we do this on purpose
+        - E3033 # we do this on purpose
 
 Parameters:
   BucketPrefix:

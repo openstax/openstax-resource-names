@@ -1,4 +1,4 @@
-import { ConfigForConfigProvider, ConfigValueProvider, envConfig, lambdaParameterConfig, replaceConfig, resolveConfigValue } from '@openstax/ts-utils/config';
+import { ConfigForConfigProvider, ConfigValueProvider, envConfig, resolveConfigValue } from '@openstax/ts-utils/config';
 import { once } from '@openstax/ts-utils/misc/helpers';
 import { apiHtmlResponse, apiJsonResponse, METHOD } from '@openstax/ts-utils/routing';
 import { FileServerAdapter } from '@openstax/ts-utils/services/fileServer';
@@ -24,12 +24,7 @@ const configProvider = getEnvironmentConfig({
     maintenanceMessage: envConfig('MAINTENANCE_MESSAGE', 'runtime', ''),
     frontendConfig: {
       roleApplication: roleValidatorConfig.application,
-      accountsBase: lambdaParameterConfig(
-        replaceConfig('/[app]/[env]/api/AccountsBase', {
-          '[app]': envConfig('APPLICATION'),
-          '[env]': envConfig('ENV_NAME', 'runtime')
-        })
-      ),
+      accountsBase: envConfig('ACCOUNTS_BASE', 'runtime'),
     },
   },
 });
@@ -96,6 +91,7 @@ export const buildIndex = createRoute({name: 'buildIndex', method: METHOD.GET, p
     frontendFileServerMiddleware,
   )},
   async(_params: undefined, services) => {
+    const token = await services.authProvider.getAuthToken();
     const user = await services.authProvider.getUser();
 
     // Frontend config is already included
@@ -110,7 +106,10 @@ export const buildIndex = createRoute({name: 'buildIndex', method: METHOD.GET, p
     const body = user ? bodyWithSubcontent.replace(
       '<head>',
       `<head>
-        <script>window._OX_USER_DATA = ${JSON.stringify(user)};</script>`
+        <script>
+          window._OX_AUTH_TOKEN = '${token}';
+          window._OX_USER_DATA = ${JSON.stringify(user)};
+        </script>`
     ): bodyWithSubcontent;
 
     return apiHtmlResponse(200, body, { 'cache-control': 'no-cache' });

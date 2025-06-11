@@ -107,6 +107,14 @@ else
   previouslyDeployed=0
 fi
 
+cd "$SCRIPT_DIR"
+
+# Get values from SSM parameters
+cookieName=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "CookieName")
+accountsBase=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "AccountsBase")
+signaturePublicKey=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "SignaturePublicKey")
+searchHost=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "SearchHost")
+
 cd "$SCRIPT_DIR"/../packages/lambda
 
 # =======
@@ -131,6 +139,8 @@ aws cloudformation deploy \
   --parameter-overrides "BucketPrefix=$bucketPrefix" "CodeBucket=$codeBucket" \
     "EnvName=$ENVIRONMENT" "Application=$APPLICATION" "ReplicaBucketWebsiteURL=$replicaBucketWebsiteURL" \
     "ApiCodeKey=$apiCodeKey" \
+    "AccountsBase=$accountsBase" "CookieName=$cookieName" "SignaturePublicKey=$signaturePublicKey" \
+    "SearchHost=$searchHost" \
   --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$ENVIRONMENT" "Owner=$OWNER"
 
 bucketName=$(yarn -s ts-utils get-stack-param "$stackName" StaticBucketName)
