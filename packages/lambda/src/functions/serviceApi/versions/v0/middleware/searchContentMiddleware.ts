@@ -1,4 +1,4 @@
-import { envConfig, lambdaParameterConfig, replaceConfig } from '@openstax/ts-utils/config';
+import { envConfig } from '@openstax/ts-utils/config';
 import { AppServices } from '../../../core';
 
 export const config = {
@@ -6,12 +6,7 @@ export const config = {
     searchHost: 'https://dev.openstax.org/open-search',
   },
   deployed: {
-    searchHost: lambdaParameterConfig(
-      replaceConfig('/[app]/[env]/api/SearchHost', {
-        '[app]': envConfig('APPLICATION'),
-        '[env]': envConfig('ENV_NAME', 'runtime')
-      })
-    ),
+    searchHost: envConfig('SEARCH_HOST', 'runtime'),
   },
 };
 
