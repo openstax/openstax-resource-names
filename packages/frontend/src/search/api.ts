@@ -15,7 +15,7 @@ const config = {
 };
 
 export const createApiClient = (app: AppServices) => {
-  return app.createApiGateway<ApiRoutes>(config, routes, app.authProvider);
+  return app.createApiGateway<ApiRoutes>(config, routes, app);
 };
 
 export const useApiClient = () => {
