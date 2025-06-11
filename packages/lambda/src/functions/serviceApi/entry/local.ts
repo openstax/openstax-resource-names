@@ -1,6 +1,5 @@
 import path from 'path';
 import url from 'url';
-import { createSearchContentClient } from "../../../services/searchClient/searchContentClient";
 import { getKeyValue } from '@openstax/ts-utils';
 import { assertString } from '@openstax/ts-utils/assertions';
 import { ifDefined } from '@openstax/ts-utils/guards';
@@ -9,6 +8,7 @@ import { localFileServer } from '@openstax/ts-utils/services/fileServer/localFil
 import {NextFunction, Request, Response} from 'express';
 import fetch from 'node-fetch';
 import queryString from 'query-string';
+import { createSearchContentClient } from '../../../services/searchClient/searchContentClient';
 import { composeResponseMiddleware, getRequestResponder, slowResponseMiddleware } from '../core/request';
 import { ApiRouteRequest } from '../core/types';
 

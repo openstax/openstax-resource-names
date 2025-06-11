@@ -6,9 +6,9 @@ import { decryptionAuthProvider } from '@openstax/ts-utils/services/authProvider
 import { s3FileServer } from '@openstax/ts-utils/services/fileServer/s3FileServer';
 import { captureAWSv3Client } from 'aws-xray-sdk';
 import fetch from 'node-fetch';
+import { createSearchContentClient } from '../../../../services/searchClient/searchContentClient';
 import { composeResponseMiddleware, slowResponseMiddleware } from '../../core/request';
 import { ApiRouteResponse } from '../../core/types';
-import { createSearchContentClient } from "../../../../services/searchClient/searchContentClient";
 
 export const lambdaServices = {
   createAuthProvider: decryptionAuthProvider({configSpace: 'deployed'}),
