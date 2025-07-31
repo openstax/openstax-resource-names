@@ -102,7 +102,7 @@ const cachedLiveOswebBooks: Record<string, any> = {};
 // Loads and returns live books matching the given language
 // Loaded books are cached for later use by commonBook()
 const cacheLiveOswebBooks = async(language: string) => {
-  const apiBaseUrl = `${oswebUrl}?type=books.Book&book_state=live&fields=${fields}&limit=100`;
+  const apiBaseUrl = `${oswebUrl}?type=books.Book&fields=${fields}&limit=1000`;
   const apiUrl = language === 'all' ? apiBaseUrl : `${apiBaseUrl}&locale=${language}`;
   const books = [];
   let total_count = 1;
@@ -114,12 +114,18 @@ const cacheLiveOswebBooks = async(language: string) => {
 
     const { items } = responseData;
     if (items.length === 0) { break; }
-    books.push(...items);
 
     total_count = responseData.meta.total_count;
     offset += items.length;
+
+    for (const book of items) {
+      if (book.book_state === 'live' || book.book_state === 'deprecated') {
+        cachedLiveOswebBooks[book.cnx_id] = book;
+        books.push(book);
+      }
+    }
   }
-  books.forEach((book: { cnx_id: string }) => { cachedLiveOswebBooks[book.cnx_id] = book; });
+
   return books;
 };
 
