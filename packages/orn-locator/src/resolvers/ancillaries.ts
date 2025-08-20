@@ -1,4 +1,4 @@
-import { acceptResponse } from "../utils/acceptResponse";
+import { acceptResponse } from '../utils/acceptResponse';
 
 const ancillariesHost = process.env.ANCILLARIES_HOST || process.env.REACT_APP_ANCILLARIES_HOST || 'https://ancillaries.openstax.org/';
 
