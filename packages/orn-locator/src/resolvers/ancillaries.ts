@@ -1,8 +1,10 @@
+import { acceptResponse } from "../utils/acceptResponse";
 
 const ancillariesHost = process.env.ANCILLARIES_HOST || process.env.REACT_APP_ANCILLARIES_HOST || 'https://ancillaries.openstax.org/';
 
 export const ancillary = async(id: string) => {
   const data = await fetch(`${ancillariesHost}api/v0/ancillaries/${id}/compiled`)
+    .then(response => acceptResponse(response))
     .then(response => response.json());
 
   return formatAncillaryData(data);
