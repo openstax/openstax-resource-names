@@ -4,7 +4,7 @@
       "label": "use exact versions",
       "packages": ["**"],
       "dependencyTypes": ["**"],
-      "dependencies": ["@openstax/orn", "@openstax/ts-utils", "typescript", "react-scripts", "@project/*", "@openstax/ui-components"],
+      "dependencies": ["@openstax/orn", "@openstax/ts-utils", "typescript", "@project/*", "@openstax/ui-components"],
       "range": ""
     },
     {
