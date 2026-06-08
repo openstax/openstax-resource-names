@@ -6,7 +6,6 @@ import { assertString } from '@openstax/ts-utils/assertions';
 import { ifDefined } from '@openstax/ts-utils/guards';
 import { subrequestAuthProvider } from '@openstax/ts-utils/services/authProvider/subrequest';
 import { localFileServer } from '@openstax/ts-utils/services/fileServer/localFileServer';
-import {NextFunction, Request, Response} from 'express';
 import fetch from 'node-fetch';
 import queryString from 'query-string';
 import { createSearchContentClient } from '../../../services/searchClient/searchContentClient';
