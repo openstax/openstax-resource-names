@@ -19,12 +19,10 @@ require('child_process').execSync(
 const lambdaDir = 'build/src/functions';
 const lambdaNames = fs.readdirSync(path.join(__dirname, lambdaDir));
 
-const externals = ['aws-sdk', 'aws-crt']
-  .concat(nodeBuiltins)
-  .reduce((externalsMap, moduleName) => {
-    externalsMap[moduleName] = moduleName;
-    return externalsMap;
-  }, {});
+const externals = nodeBuiltins.reduce((externalsMap, moduleName) => {
+  externalsMap[moduleName] = moduleName;
+  return externalsMap;
+}, {});
 
 module.exports = lambdaNames.map(lambdaName => {
   const lambdaPath = path.join(__dirname, lambdaDir, lambdaName);

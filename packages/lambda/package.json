@@ -52,7 +52,7 @@
     "build:clean": "npm run clean && npm run build",
     "ci": "CI=true npm-run-all ci:*",
     "ci:lint": "eslint --max-warnings=0 .",
-    "ci:spelling": "git ls-files | cspell -c ../../cspell.json --file-list stdin",
+    "ci:spelling": "cspell -c ../../cspell.json --gitignore --gitignore-root ../.. '**'",
     "ci:test": "jest --coverage",
     "ci:typecheck": "tsc --noEmit",
     "clean": "rm -rf dist build",

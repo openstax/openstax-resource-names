@@ -3,7 +3,6 @@ import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import fs from 'node:fs';
 
 function lambdaProxyPlugin(): Plugin {
@@ -20,7 +19,6 @@ export default defineConfig({
   plugins: [
     react(),
     tsconfigPaths(),
-    nodePolyfills({ include: ['crypto', 'stream'] }),
     lambdaProxyPlugin(),
   ],
 
@@ -54,8 +52,11 @@ export default defineConfig({
         cookieDomainRewrite: '',
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
-            if (req.headers.host) {
-              proxyReq.setHeader('X-Forwarded-Host', req.headers.host);
+            // vite's HTTPS dev server runs over HTTP/2, where the host header
+            // is delivered as the `:authority` pseudo-header instead of `host`.
+            const host = req.headers.host || req.headers[':authority'];
+            if (typeof host === 'string') {
+              proxyReq.setHeader('X-Forwarded-Host', host);
             }
           });
         },
@@ -78,11 +79,7 @@ export default defineConfig({
         //   CJS vitest instance from the ESM one the runner uses (the "dual
         //   package hazard"), so the extended expect has a different SnapshotClient
         //   than the one the runner initialized — breaking all snapshot matchers.
-        //
-        // @openstax/ui-components — ships a minified ESM bundle that uses named
-        //   imports from @sentry/react, which is CJS. Node's native ESM loader
-        //   cannot resolve CJS named exports via static import syntax.
-        inline: [/@testing-library\/jest-dom/, /@openstax\/ui-components/],
+        inline: [/@testing-library\/jest-dom/],
       },
     },
     coverage: {

@@ -1,0 +1,70 @@
+name: sbom
+
+# Triggers:
+# - daily cron: emits refs/main from current main HEAD, refreshes project.yml
+# - workflow_dispatch: invoked from deploy.bash after a successful deploy with
+#   ref=<environment> and sha=<deployed git sha> to emit refs/<environment>
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Inventory ref to emit to (main, staging, production, ...)"
+        required: false
+        default: main
+        type: string
+      sha:
+        description: "Git SHA to generate the SBOM for (defaults to HEAD)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  emit:
+    runs-on: ubuntu-latest
+    env:
+      INVENTORY_REF: ${{ github.event.inputs.ref || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.sha || github.sha }}
+          fetch-depth: 0   # emit-changes needs full history for `git log`
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm sbom --sbom-format=cyclonedx > /tmp/sbom.json
+
+      - uses: openstax/birder/.github/actions/emit-sbom@main
+        with:
+          token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
+          project: ${{ github.event.repository.name }}
+          ref: ${{ env.INVENTORY_REF }}
+          source: npm
+          sbom-path: /tmp/sbom.json
+
+      - uses: openstax/birder/.github/actions/emit-changes@main
+        with:
+          token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
+          project: ${{ github.event.repository.name }}
+          ref: ${{ env.INVENTORY_REF }}
+          to-sha: ${{ github.event.inputs.sha || github.sha }}
+
+      # project.yml tracks main only — skip on per-env deploy emissions.
+      # Downstream projects: replace `Shared Services` with your team's CORE
+      # component so findings file under your board, and update slack-channel
+      # to your team's channel ID if you have one.
+      - if: env.INVENTORY_REF == 'main'
+        uses: openstax/birder/.github/actions/emit-project-config@main
+        with:
+          token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
+          project: ${{ github.event.repository.name }}
+          github-repo: ${{ github.repository }}
+          jira-components: Shared Services
+          slack-channel: C07K4CU96N6

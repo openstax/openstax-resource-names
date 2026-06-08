@@ -3,6 +3,8 @@
 set -euo pipefail; if [ -n "${DEBUG-}" ]; then set -x; fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_DIR=$( cd -- "$SCRIPT_DIR/.." &> /dev/null && pwd )
+cd "$PROJECT_DIR"
 
 if [ -z "${ENVIRONMENT:-}" ]; then echo "run this command with 'npx ts-utils deploy' instead of executing it directly" > /dev/stderr; exit 1; fi
 
@@ -87,7 +89,7 @@ aws s3 cp "dist/serviceApi.zip" "s3://$codeBucket/$apiCodeKey"
 # =======
 # build frontend and upload to static site bucket
 # =======
-cd "$SCRIPT_DIR"/../packages/frontend
+cd "$PROJECT_DIR/packages/frontend"
 
 export VITE_CODE_VERSION="$CODE_VERSION"
 export VITE_APP_NAME="$APPLICATION"
@@ -152,13 +154,20 @@ distributionId=$(ts-utils get-stack-param "$stackName" DistributionId)
 # =======
 export VITE_API_BASE_URL="https://${domainName}"
 
-cd "$SCRIPT_DIR"/../packages/frontend
+cd "$PROJECT_DIR/packages/frontend"
 if [ $previouslyDeployed -eq 0 ]; then
   npm run build:clean
 fi
 aws s3 sync build "s3://${bucketName}${PUBLIC_URL}" --delete --region "$AWS_DEFAULT_REGION"
 
 aws cloudfront create-invalidation --distribution-id "$distributionId" --paths "/*" --output text --query "Invalidation.Status"
+
+# =======
+# trigger SBOM emission for this environment (best-effort; deploy already succeeded)
+# uses developer's local gh auth — no inventory write happens from this machine.
+# =======
+gh workflow run sbom.yml -F ref="$ENVIRONMENT" -F sha="$gitVersion" \
+  || echo "warning: failed to trigger SBOM emission workflow" > /dev/stderr
 
 # =======
 # done
