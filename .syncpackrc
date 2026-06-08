@@ -8,6 +8,13 @@
       "range": ""
     },
     {
+      "label": "http-message-signatures: pinned at 1.0.4 — 1.0.5 swapped structured-headers v1→v2 which broke signature parsing",
+      "packages": ["**"],
+      "dependencyTypes": ["**"],
+      "dependencies": ["http-message-signatures"],
+      "range": ""
+    },
+    {
       "label": "use caret ranges",
       "packages": ["**"],
       "dependencyTypes": ["prod"],

@@ -5,14 +5,14 @@
     "@openstax/ts-utils": "1.48.1"
   },
   "devDependencies": {
-    "syncpack": "^12.3.0"
+    "syncpack": "^15.1.2"
   },
   "private": true,
   "scripts": {
     "build": "./scripts/build.bash",
     "ci": "CI=true npm-run-all ci:*",
     "ci:packages": "./scripts/ci.bash",
-    "ci:spelling": "git ls-files -- . ':!:packages/' | cspell -c ./cspell.json --file-list stdin",
+    "ci:spelling": "cspell -c ./cspell.json --gitignore -e 'packages/**' '**'",
     "ci:versions": "syncpack lint",
     "preinstall": "npx only-allow npm",
     "start": "./scripts/start.bash"
