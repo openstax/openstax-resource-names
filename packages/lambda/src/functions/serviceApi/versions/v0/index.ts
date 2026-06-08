@@ -1,6 +1,7 @@
 import { ConfigForConfigProvider, ConfigValueProvider, envConfig, resolveConfigValue } from '@openstax/ts-utils/config';
 import { once } from '@openstax/ts-utils/misc/helpers';
-import { apiHtmlResponse, apiJsonResponse, METHOD } from '@openstax/ts-utils/routing';
+import { apiHtmlResponse, apiJsonResponse, METHOD, routesList } from '@openstax/ts-utils/routing';
+import { TokenUser } from '@openstax/ts-utils/services/authProvider';
 import { FileServerAdapter } from '@openstax/ts-utils/services/fileServer';
 import { composeServiceMiddleware, createRoute } from '../../core/services';
 import { authMiddleware } from './middleware/authMiddleware';
@@ -76,7 +77,7 @@ export const apiV0Index = createRoute({name: 'apiV0Info', method: METHOD.GET, pa
   requestServiceProvider},
   async(_params: undefined, services) => {
     // This config is here for backwards compatibility and can eventually be removed
-    const config = await resolveFrontendConfig(services.environmentConfig.frontendConfig);
+    const config = await resolveFrontendConfig(services.environmentConfig.frontendConfig, services.environmentConfig.codeVersion);
 
     return apiJsonResponse(200, {
       code: await resolveConfigValue(services.environmentConfig.codeVersion),
@@ -121,7 +122,7 @@ export const buildIndex = createRoute({name: 'buildIndex', method: METHOD.GET, p
   }
 );
 
-export const apiV0Routes = () => ([
+export const apiV0Routes = () => routesList([
   apiV0Index,
   buildIndex,
   ...apiV0OrnRoutes(),

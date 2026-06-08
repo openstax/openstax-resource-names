@@ -37,11 +37,12 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"}}",
+  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
       "accountsBase": "https://dev.openstax.org/accounts",
+      "releaseId": "code-version-goes-here",
       "roleApplication": "test",
     },
   },
@@ -73,11 +74,12 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"}}",
+  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
       "accountsBase": "https://dev.openstax.org/accounts",
+      "releaseId": "code-version-goes-here",
       "roleApplication": "test",
     },
   },
@@ -118,9 +120,9 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "data": "<html><head>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
     "content-type": "text/html",
@@ -161,15 +163,15 @@ describe('buildIndex', () => {
   "body": "<html><head>
         <script>
           window._OX_AUTH_TOKEN = 'authToken';
-          window._OX_USER_DATA = {"name":"test user","consent_preferences":{"accepted":["test"],"rejected":["nothing"]}};
+          window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};
         </script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "data": "<html><head>
         <script>
           window._OX_AUTH_TOKEN = 'authToken';
-          window._OX_USER_DATA = {"name":"test user","consent_preferences":{"accepted":["test"],"rejected":["nothing"]}};
+          window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};
         </script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
     "content-type": "text/html",
@@ -205,9 +207,9 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
   "data": "<html><head>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
     "content-type": "text/html",
@@ -237,7 +239,7 @@ describe('makeIndexHtmlBody', () => {
     );
     expect(response).toMatchInlineSnapshot(`
 "<html><head>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts"};</script><!-- Static head stuff --></head><body>Down for maintenance<!-- Static body stuff --></body></html>"
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body>Down for maintenance<!-- Static body stuff --></body></html>"
 `);
   });
 });
