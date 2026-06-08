@@ -61,22 +61,22 @@ codeBucket=$(ts-utils get-stack-param "$APPLICATION-shared" BucketName)
 # =======
 # build utils code if the package exists in this repo
 # =======
-if [ -d "$SCRIPT_DIR"/../packages/utils ]; then
-  cd "$SCRIPT_DIR"/../packages/utils
+if [ -d "$PROJECT_DIR/packages/utils" ]; then
+  cd "$PROJECT_DIR/packages/utils"
   npm run build:clean
 fi
 
 # =======
 # build locator code
 # =======
-cd "$SCRIPT_DIR"/../packages/orn-locator
+cd "$PROJECT_DIR/packages/orn-locator"
 
 npm run build:clean && node script/preload-data.js
 
 # =======
 # build api code and upload to code bucket
 # =======
-cd "$SCRIPT_DIR"/../packages/lambda
+cd "$PROJECT_DIR/packages/lambda"
 
 export CODE_VERSION="$gitVersion"
 export APPLICATION;
@@ -109,7 +109,7 @@ else
   previouslyDeployed=0
 fi
 
-cd "$SCRIPT_DIR"
+cd "$PROJECT_DIR"
 
 # Get values from SSM parameters
 cookieName=$(ts-utils get-env-param "$ENVIRONMENT" "CookieName")
@@ -117,7 +117,7 @@ accountsBase=$(ts-utils get-env-param "$ENVIRONMENT" "AccountsBase")
 signaturePublicKey=$(ts-utils get-env-param "$ENVIRONMENT" "SignaturePublicKey")
 searchHost=$(ts-utils get-env-param "$ENVIRONMENT" "SearchHost")
 
-cd "$SCRIPT_DIR"/../packages/lambda
+cd "$PROJECT_DIR/packages/lambda"
 
 # =======
 # main deployment includes alt region for fail over
