@@ -1,15 +1,16 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ServiceContext, serviceProviderMiddleware } from "./services";
 import { AppServices } from "../types";
 
 afterEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
 });
 
 describe('ServicesContext', () => {
   it('throws without a provider', () => {
-    jest.spyOn(console, 'error').mockReturnValue(undefined);
+    vi.spyOn(console, 'error').mockReturnValue(undefined);
 
     const Test = () => {
       React.useContext(ServiceContext)();

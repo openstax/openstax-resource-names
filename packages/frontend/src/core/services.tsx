@@ -9,6 +9,7 @@ export const composeResponseServiceMiddleware = makeComposeMiddleware<AppService
 
 export const createRoute = makeCreateRoute<AppServices, Location>();
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export const makeScreen = <P,>(Screen: React.ComponentType<P>) => (params: {} extends P ? undefined : P) => {
   return <Screen {...params as any} />;
 };

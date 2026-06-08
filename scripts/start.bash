@@ -16,10 +16,11 @@ function start() {
   # looping instead of running `yarn workspaces run start`
   # so that each command can be sent to background
   for package in $all_packages; do
+    label="${package##*/}"
     echo "checking startup commands in $package ..."
-    yarn --silent workspace "$package" run data:seed 2>&1 || true
+    yarn --silent workspace "$package" run data:seed 2>&1 | sed "s/^/[$label] /" || true
     echo "starting $package ..."
-    yarn workspace "$package" start &
+    yarn workspace "$package" start 2>&1 | sed "s/^/[$label] /" &
   done
 
   # wait for ctrl-c

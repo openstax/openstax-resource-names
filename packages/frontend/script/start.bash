@@ -16,7 +16,4 @@ cd "$project_dir"
 export NODE_EXTRA_CA_CERTS="$shared_certificate_dir/CA.cer"
 export SSL_CRT_FILE="$project_dir/data/${HOST:-localhost}.cer"
 export SSL_KEY_FILE="$project_dir/data/${HOST:-localhost}.pvk";
-export HTTPS=true
-export BROWSER=none
-
-yarn react-scripts start
+yarn dev --clearScreen false

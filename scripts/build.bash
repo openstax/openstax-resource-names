@@ -19,6 +19,7 @@ remaining_packages=$(echo "${build_order[@]}" "$all_packages" | tr ' ' '\n' | so
 
 # build em
 for package in "${build_order[@]}" $remaining_packages; do
+  label="${package##*/}"
   echo "building $package ..."
-  yarn workspace "$package" build:clean
+  yarn workspace "$package" build:clean 2>&1 | sed "s/^/[$label] /"
 done

@@ -1,4 +1,3 @@
-/* eslint-disable import/no-webpack-loader-syntax */
 import { TRoutes as ApiRoutes } from '@project/lambdas/build/src/functions/serviceApi/core/routes';
 import type {
   FrontendConfigProvider as LambdaFrontendConfigProvider
@@ -6,8 +5,7 @@ import type {
 import { once } from '@openstax/ts-utils';
 import { ConfigForConfigProvider } from '@openstax/ts-utils/config';
 import type { createApiGateway } from '@openstax/ts-utils/services/apiGateway';
-// @ts-ignore-next-line
-import routes from '!!val-loader!@project/lambdas/build/script/utils/routeDataLoader';
+import routes from '@project/lambdas/build/routeData.json';
 
 export type FrontendConfig = ConfigForConfigProvider<LambdaFrontendConfigProvider>;
 

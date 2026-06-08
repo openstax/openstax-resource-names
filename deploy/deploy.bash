@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spell-checker: ignore pipefail
+# spell-checker: ignore pipefail, VITE
 set -euo pipefail; if [ -n "${DEBUG-}" ]; then set -x; fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -89,8 +89,8 @@ aws s3 cp "dist/serviceApi.zip" "s3://$codeBucket/$apiCodeKey"
 # =======
 cd "$SCRIPT_DIR"/../packages/frontend
 
-export REACT_APP_CODE_VERSION="$CODE_VERSION"
-export REACT_APP_NAME="$APPLICATION"
+export VITE_CODE_VERSION="$CODE_VERSION"
+export VITE_APP_NAME="$APPLICATION"
 export PUBLIC_URL="/build"
 
 # =======
@@ -100,7 +100,7 @@ if yarn -s ts-utils stack-exists "$stackName"; then
   previouslyDeployed=1
   bucketName=$(yarn -s ts-utils get-stack-param "$stackName" StaticBucketName)
   domainName=$(yarn -s ts-utils get-stack-param "$stackName" DistributionDomainName)
-  export REACT_APP_API_BASE_URL="https://${domainName}"
+  export VITE_API_BASE_URL="https://${domainName}"
   yarn build:clean
   aws s3 sync build "s3://${bucketName}${PUBLIC_URL}" --region "$AWS_DEFAULT_REGION"
 else
@@ -150,7 +150,7 @@ distributionId=$(yarn -s ts-utils get-stack-param "$stackName" DistributionId)
 # =======
 # build frontend and upload to static site bucket
 # =======
-export REACT_APP_API_BASE_URL="https://${domainName}"
+export VITE_API_BASE_URL="https://${domainName}"
 
 cd "$SCRIPT_DIR"/../packages/frontend
 if [ $previouslyDeployed -eq 0 ]; then

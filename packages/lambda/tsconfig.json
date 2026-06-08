@@ -26,5 +26,8 @@
   "include": [
     "src",
     "script"
+  ],
+  "exclude": [
+    "script/utils/generateRouteData.js"
   ]
 }
