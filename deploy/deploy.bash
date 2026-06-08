@@ -69,7 +69,7 @@ fi
 # =======
 cd "$SCRIPT_DIR"/../packages/orn-locator
 
-yarn build:clean && node script/preload-data.js
+npm run build:clean && node script/preload-data.js
 
 # =======
 # build api code and upload to code bucket
@@ -110,10 +110,10 @@ fi
 cd "$SCRIPT_DIR"
 
 # Get values from SSM parameters
-cookieName=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "CookieName")
-accountsBase=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "AccountsBase")
-signaturePublicKey=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "SignaturePublicKey")
-searchHost=$(yarn -s ts-utils get-env-param "$ENVIRONMENT" "SearchHost")
+cookieName=$(ts-utils get-env-param "$ENVIRONMENT" "CookieName")
+accountsBase=$(ts-utils get-env-param "$ENVIRONMENT" "AccountsBase")
+signaturePublicKey=$(ts-utils get-env-param "$ENVIRONMENT" "SignaturePublicKey")
+searchHost=$(ts-utils get-env-param "$ENVIRONMENT" "SearchHost")
 
 cd "$SCRIPT_DIR"/../packages/lambda
 
@@ -143,9 +143,9 @@ aws cloudformation deploy \
     "SearchHost=$searchHost" \
   --tags "Project=$PROJECT" "Application=$APPLICATION" "Environment=$ENVIRONMENT" "Owner=$OWNER"
 
-bucketName=$(yarn -s ts-utils get-stack-param "$stackName" StaticBucketName)
-domainName=$(yarn -s ts-utils get-stack-param "$stackName" DistributionDomainName)
-distributionId=$(yarn -s ts-utils get-stack-param "$stackName" DistributionId)
+bucketName=$(ts-utils get-stack-param "$stackName" StaticBucketName)
+domainName=$(ts-utils get-stack-param "$stackName" DistributionDomainName)
+distributionId=$(ts-utils get-stack-param "$stackName" DistributionId)
 
 # =======
 # build frontend and upload to static site bucket

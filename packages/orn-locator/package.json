@@ -12,11 +12,11 @@
     "tiny-async-pool": "^1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^24.2.0",
     "@types/node-fetch": "^2.6.11",
     "@types/tiny-async-pool": "1",
-    "@eslint/js": "^9.39.1",
     "cspell": "^6.12.0",
     "eslint": "^9.39.1",
     "eslint-plugin-import-x": "^4.15.0",
@@ -50,18 +50,18 @@
   "main": "dist/index.nodejs.js",
   "scripts": {
     "build": "./script/build.bash",
-    "build:clean": "yarn clean && yarn build",
-    "build:example": "yarn build && yarn webpack -c ./example/webpack.config.js",
+    "build:clean": "npm run clean && npm run build",
+    "build:example": "npm run build && webpack -c ./example/webpack.config.js",
     "ci": "CI=true npm-run-all ci:*",
-    "ci:build": "yarn build --clean",
+    "ci:build": "npm run build -- --clean",
     "ci:lint": "eslint --max-warnings=0 .",
-    "ci:spelling": "git ls-files | yarn cspell -c ../../cspell.json --file-list stdin",
-    "ci:test": "yarn jest --coverage",
+    "ci:spelling": "git ls-files | cspell -c ../../cspell.json --file-list stdin",
+    "ci:test": "jest --coverage",
     "ci:typecheck": "tsc --noEmit",
     "clean": "rm -rf dist build",
     "coverage-report": "open coverage/index.html",
     "start": "./script/build.bash --watch",
-    "test": "yarn jest"
+    "test": "jest"
   },
   "types": "index.d.ts",
   "typesVersions": {

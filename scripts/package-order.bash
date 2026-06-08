@@ -12,7 +12,7 @@ cd "$project_dir"
 # packages that must be built before other ones (in this order)
 # trying to be graceful about the template being copied and packages
 # getting removed without requiring updating the world
-build_order=()
+build_order=("@openstax/orn-locator")
 test -d ./packages/utils/ && build_order+=("@openstax/ts-utils")
 test -d ./packages/lambda/ && build_order+=("@project/lambdas")
 

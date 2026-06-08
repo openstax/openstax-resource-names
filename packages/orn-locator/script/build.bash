@@ -23,4 +23,4 @@ fi
 
 mkdir -p dist
 
-yarn tsc --project tsconfig.withoutspecs.json "${tsc_args[@]}"
+tsc --project tsconfig.withoutspecs.json "${tsc_args[@]}"
