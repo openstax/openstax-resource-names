@@ -41,7 +41,17 @@ jobs:
       - run: npm ci
       - run: npm sbom --sbom-format=cyclonedx > /tmp/sbom.json
 
-      - uses: openstax/birder/.github/actions/emit-sbom@main
+      # birder is private and this repo is public, so the run's GITHUB_TOKEN
+      # can't resolve openstax/birder actions directly. Check it out with a
+      # credential that can read it, then run the actions from the local path.
+      - uses: actions/checkout@v4
+        with:
+          repository: openstax/birder
+          ref: main
+          path: .birder
+          token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
+
+      - uses: ./.birder/.github/actions/emit-sbom
         with:
           token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
           project: ${{ github.event.repository.name }}
@@ -49,7 +59,7 @@ jobs:
           source: npm
           sbom-path: /tmp/sbom.json
 
-      - uses: openstax/birder/.github/actions/emit-changes@main
+      - uses: ./.birder/.github/actions/emit-changes
         with:
           token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
           project: ${{ github.event.repository.name }}
@@ -61,7 +71,7 @@ jobs:
       # component so findings file under your board, and update slack-channel
       # to your team's channel ID if you have one.
       - if: env.INVENTORY_REF == 'main'
-        uses: openstax/birder/.github/actions/emit-project-config@main
+        uses: ./.birder/.github/actions/emit-project-config
         with:
           token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
           project: ${{ github.event.repository.name }}
