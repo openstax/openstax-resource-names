@@ -34,7 +34,8 @@ module.exports = {
           'warn',
           {
             args: 'none',
-            ignoreRestSiblings: true
+            ignoreRestSiblings: true,
+            varsIgnorePattern: '^_',
           }
         ],
         '@typescript-eslint/no-explicit-any': 'off'

@@ -133,7 +133,8 @@ describe('buildIndex', () => {
   it('matches snapshot with user', async() => {
     const requestServices = {
       authProvider: stubAuthProvider({
-        name: 'test user', consent_preferences: { accepted: ['test'], rejected: ['nothing'] },
+        uuid: '5c9f7915-4abb-499b-805d-de29cdf67e2d',
+        consent_preferences: { accepted: ['test'], rejected: ['nothing'] },
       } as User),
       environmentConfig: {
         codeVersion: 'code-version-goes-here',

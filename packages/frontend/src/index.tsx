@@ -47,14 +47,21 @@ const Router = () => {
   return <>{handler(location)}</>;
 };
 
-ReactDOM.render(
-  <React.StrictMode>
+const ErrorBoundaryComponent = () => {
+  return (
     <ErrorBoundary
       renderFallback
       // sentryDsn='https://examplePublicKey@o0.ingest.sentry.io/0'
+
     >
       <Router />
     </ErrorBoundary>
+  );
+};
+
+ReactDOM.render(
+  <React.StrictMode>
+    <ErrorBoundaryComponent />
   </React.StrictMode>,
   document.getElementById('root')
 );

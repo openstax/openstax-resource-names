@@ -10,5 +10,5 @@ export const composeResponseServiceMiddleware = makeComposeMiddleware<AppService
 export const createRoute = makeCreateRoute<AppServices, Location>();
 
 export const makeScreen = <P,>(Screen: React.ComponentType<P>) => (params: {} extends P ? undefined : P) => {
-  return <Screen {...params as P} />;
+  return <Screen {...params as any} />;
 };

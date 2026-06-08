@@ -44,7 +44,7 @@
       });
 
       document.addEventListener('cookieyes_banner_load', (eventData) => {
-        const consentPreferences = window._OX_USER_DATA?.consent_preferences;
+        const consentPreferences = window._OX_USER_DATA?.consentPreferences;
         if (consentPreferences) {
           // Accounts remembers some state
           // We always defer to Accounts in this case
@@ -52,16 +52,22 @@
           // Only call the CookieYes API if it doesn't match what's in Accounts
           let doUpdate = !eventData.detail.isUserActionCompleted;
 
-          consentPreferences.accepted.forEach((accepted) => {
+          consentPreferences.accepted?.forEach((accepted) => {
             // There is no "necessary" switch
             if (accepted !== 'necessary') {
-              document.getElementById(`ckySwitch${accepted}`).checked = true;
-              if (!eventData.detail.categories[accepted]) { doUpdate = true; }
+              const switchElem = document.getElementById(`ckySwitch${accepted}`);
+              if (switchElem) {
+                switchElem.checked = true;
+                if (!eventData.detail.categories[accepted]) { doUpdate = true; }
+              }
             }
           });
-          consentPreferences.rejected.forEach((rejected) => {
-            document.getElementById(`ckySwitch${rejected}`).checked = false;
-            if (eventData.detail.categories[rejected]) { doUpdate = true; }
+          consentPreferences.rejected?.forEach((rejected) => {
+            const switchElem = document.getElementById(`ckySwitch${rejected}`);
+            if (switchElem) {
+              switchElem.checked = false;
+              if (eventData.detail.categories[rejected]) { doUpdate = true; }
+            }
           });
           if (doUpdate) { performBannerAction('accept_partial'); }
         }
