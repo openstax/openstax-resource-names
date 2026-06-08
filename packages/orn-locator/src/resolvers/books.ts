@@ -517,7 +517,7 @@ const parseSearchQuery = (query: string) => {
     ));
     // this matches words without word boundaries
     score += words.reduce((result, term) =>
-      // eslint-disable-next-line no-useless-escape
+       
       result + [...text.replace(/[,"]/g, '').matchAll(new RegExp(`[^\\b\\s]${term}|${term}[^\\b\\s]`, 'ig'))].length, 0
     );
 

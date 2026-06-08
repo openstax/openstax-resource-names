@@ -88,5 +88,5 @@ export const patterns = {
   }),
 };
 
-const allResolves = Object.values(patterns).map((pattern) => pattern.resolve);
-export type AnyResolvedOrn = Awaited<ReturnType<typeof allResolves[number]>>;
+const _allResolves = Object.values(patterns).map((pattern) => pattern.resolve);
+export type AnyResolvedOrn = Awaited<ReturnType<typeof _allResolves[number]>>;

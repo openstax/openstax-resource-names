@@ -1,6 +1,6 @@
 import nodeFetch from 'node-fetch';
 
-declare var globalThis: any;
+declare let globalThis: any;
 
 globalThis.fetch = nodeFetch;
 
