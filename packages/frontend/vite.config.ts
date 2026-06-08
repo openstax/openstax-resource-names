@@ -79,7 +79,13 @@ export default defineConfig({
         //   CJS vitest instance from the ESM one the runner uses (the "dual
         //   package hazard"), so the extended expect has a different SnapshotClient
         //   than the one the runner initialized — breaking all snapshot matchers.
-        inline: [/@testing-library\/jest-dom/],
+        //
+        // @openstax/ui-components — our search screen statically imports it, and
+        //   its ESM bundle uses named imports from @sentry/react (CJS). Inlining
+        //   routes it through Vite's CJS interop instead of Node's ESM loader,
+        //   which can't resolve those named exports. (Project-specific: the
+        //   template dropped this, but our screen pulls ui-components into tests.)
+        inline: [/@testing-library\/jest-dom/, /@openstax\/ui-components/],
       },
     },
     coverage: {
