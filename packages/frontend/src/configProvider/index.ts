@@ -3,6 +3,7 @@ import type {
   FrontendConfigProvider as LambdaFrontendConfigProvider
 } from '@project/lambdas/build/src/functions/serviceApi/versions/v0';
 import { once } from '@openstax/ts-utils';
+import { assertDefined } from '@openstax/ts-utils/assertions';
 import { ConfigForConfigProvider } from '@openstax/ts-utils/config';
 import type { createApiGateway } from '@openstax/ts-utils/services/apiGateway';
 import routes from '@project/lambdas/build/routeData.json';
@@ -10,7 +11,9 @@ import routes from '@project/lambdas/build/routeData.json';
 export type FrontendConfig = ConfigForConfigProvider<LambdaFrontendConfigProvider>;
 
 const config = {
-  apiBase: () => '/'
+  apiBase: () => import.meta.env.PROD
+    ? assertDefined(import.meta.env.VITE_API_BASE_URL, 'VITE_API_BASE_URL must be provided in production')
+    : '/'
 };
 
 const getApiGateway = (makeApiGateway: ReturnType<typeof createApiGateway>) => {

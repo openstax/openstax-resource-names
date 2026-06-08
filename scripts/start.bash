@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
-# spell-checker: ignore pipefail SIGINT
+# spell-checker: ignore pipefail SIGINT prereqs prereq
 set -euo pipefail; if [ -n "${DEBUG-}" ]; then set -x; fi
 
 project_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
 
 cd "$project_dir"
 
-source $(yarn -s ts-utils which init-constants-script)
+source "$(ts-utils which init-constants-script)"
 
-./scripts/build.bash
-
-all_packages=$(yarn --silent workspaces info | node -e "process.stdout.write(Object.keys(JSON.parse(require('fs').readFileSync('/dev/stdin').toString())).join(' '))")
+all_packages=$("$project_dir/scripts/package-order.bash")
+prereq_packages=$("$project_dir/scripts/package-order.bash" --prereqs)
 
 function start() {
-  # looping instead of running `yarn workspaces run start`
+  # build prerequisite packages so their outputs exist for dependents
+  for package in $prereq_packages; do
+    label="${package##*/}"
+    echo "building prerequisite $package ..."
+    npm --workspace="$package" run build 2>&1 | sed "s/^/[$label] /"
+  done
+
+  # looping instead of running `npm run start --workspaces`
   # so that each command can be sent to background
   for package in $all_packages; do
     label="${package##*/}"
     echo "checking startup commands in $package ..."
-    yarn --silent workspace "$package" run data:seed 2>&1 | sed "s/^/[$label] /" || true
+    npm --workspace="$package" --silent run data:seed --if-present 2>&1 | sed "s/^/[$label] /" || true
     echo "starting $package ..."
-    yarn workspace "$package" start 2>&1 | sed "s/^/[$label] /" &
+    npm --workspace="$package" run start 2>&1 | sed "s/^/[$label] /" &
   done
 
   # wait for ctrl-c

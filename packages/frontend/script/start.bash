@@ -16,4 +16,6 @@ cd "$project_dir"
 export NODE_EXTRA_CA_CERTS="$shared_certificate_dir/CA.cer"
 export SSL_CRT_FILE="$project_dir/data/${HOST:-localhost}.cer"
 export SSL_KEY_FILE="$project_dir/data/${HOST:-localhost}.pvk";
-yarn dev --clearScreen false
+export VITE_APP_NAME="${APPLICATION:-}"
+export VITE_CODE_VERSION="$(git rev-parse HEAD 2>/dev/null || echo 'dev')"
+npm run dev -- --clearScreen false

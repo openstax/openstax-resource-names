@@ -24,14 +24,21 @@ export default defineConfig({
     lambdaProxyPlugin(),
   ],
 
+  resolve: {
+    preserveSymlinks: true,
+  },
   base: process.env.PUBLIC_URL || '/',
 
   build: {
     outDir: 'build',
     sourcemap: true,
+    commonjsOptions: {
+      include: [/node_modules/, /packages\/lambda\/build/],
+    },
   },
 
   server: {
+    cors: { origin: true, credentials: true },
     host: process.env.HOST || 'localhost',
     port: parseInt(process.env.PORT || '3000', 10),
     https: process.env.SSL_CRT_FILE ? {

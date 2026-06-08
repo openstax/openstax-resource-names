@@ -44,23 +44,23 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "archive": "yarn archive:bundle && yarn archive:zip",
-    "archive:bundle": "yarn webpack --mode production",
-    "archive:clean": "yarn clean && yarn archive",
+    "archive": "npm run archive:bundle && npm run archive:zip",
+    "archive:bundle": "webpack --mode production",
+    "archive:clean": "npm run clean && npm run archive",
     "archive:zip": "./script/bundle-functions.bash",
     "build": "./script/build.bash",
-    "build:clean": "yarn clean && yarn build",
+    "build:clean": "npm run clean && npm run build",
     "ci": "CI=true npm-run-all ci:*",
     "ci:lint": "eslint --max-warnings=0 .",
-    "ci:spelling": "git ls-files | yarn cspell -c ../../cspell.json --file-list stdin",
-    "ci:test": "yarn jest --coverage",
+    "ci:spelling": "git ls-files | cspell -c ../../cspell.json --file-list stdin",
+    "ci:test": "jest --coverage",
     "ci:typecheck": "tsc --noEmit",
     "clean": "rm -rf dist build",
     "coverage-report": "open coverage/index.html",
     "data:clean": "find data/ -maxdepth 1 -type f -delete",
-    "data:reset": "yarn data:clean && yarn data:seed",
+    "data:reset": "npm run data:clean && npm run data:seed",
     "data:seed": "cp -n ./data/seeds/* ./data/ || true",
     "start": "./script/build.bash --watch",
-    "test": "yarn jest"
+    "test": "jest"
   }
 }

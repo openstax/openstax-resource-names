@@ -18,6 +18,7 @@
     "subrequests",
     "systemsmanager",
     "unversioned",
+    "vite",
     "Xapi"
   ],
   "flagWords": [],
@@ -25,7 +26,7 @@
     "*.spec.ts.snap",
     "coverage",
     "package.json",
-    "yarn.lock",
+    "package-lock.json",
     "node_modules/**",
     "*.svg"
   ]
