@@ -11,7 +11,7 @@ import { composeResponseMiddleware, slowResponseMiddleware } from '../../core/re
 import { ApiRouteResponse } from '../../core/types';
 
 export const lambdaServices = {
-  createAuthProvider: decryptionAuthProvider({configSpace: 'deployed'}),
+  createAuthProvider: decryptionAuthProvider({configSpace: 'deployed', fetch}),
   createFileServer: s3FileServer({
     configSpace: 'deployed',
     getS3Client: /* istanbul ignore next */ (...args) => captureAWSv3Client(new S3Client(...args))

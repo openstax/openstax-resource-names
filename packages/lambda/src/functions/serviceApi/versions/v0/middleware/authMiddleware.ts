@@ -8,6 +8,7 @@ const config = {
     cookieName: 'oxa_dev',
   },
   deployed: {
+    accountsBase: envConfig('ACCOUNTS_BASE', 'runtime'),
     cookieName: envConfig('COOKIE_NAME', 'runtime'),
     encryptionPrivateKey: lambdaParameterConfig(
       replaceConfig('/[app]/[env]/api/EncryptionPrivateKey', {

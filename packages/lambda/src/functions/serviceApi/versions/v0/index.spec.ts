@@ -1,5 +1,6 @@
 import { getKeyValue } from '@openstax/ts-utils';
 import { stubAuthProvider, User } from '@openstax/ts-utils/services/authProvider';
+import { FileServerAdapter } from '@openstax/ts-utils/services/fileServer';
 import { createConsoleLogger } from '@openstax/ts-utils/services/logger/console';
 import { ApiRouteRequest, AppServices } from '../../core';
 import { apiV0Index, apiV0Routes, buildIndex, makeIndexHtmlBody } from '.';
@@ -109,7 +110,7 @@ describe('buildIndex', () => {
         getFileContent: async() => Buffer.from(
           '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
         )
-      },
+      } as unknown as FileServerAdapter,
       logger: createConsoleLogger(),
       request,
     };
@@ -149,7 +150,7 @@ describe('buildIndex', () => {
         getSignedViewerUrl: jest.fn(),
         getFileContent: async() => Buffer.from(
         '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
-      ) },
+      ) } as unknown as FileServerAdapter,
       logger: createConsoleLogger(),
       request,
     };
@@ -195,7 +196,7 @@ describe('buildIndex', () => {
         getSignedViewerUrl: jest.fn(),
         getFileContent: async() => Buffer.from(
         '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
-      ) },
+      ) } as unknown as FileServerAdapter,
       logger: createConsoleLogger(),
       request: { queryStringParameters: { subcontent: 'true' } } as unknown as ApiRouteRequest,
     };
@@ -224,7 +225,7 @@ describe('makeIndexHtmlBody', () => {
       getFileContent: async () => Buffer.from(
         '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
       )
-    }, {
+    } as unknown as FileServerAdapter, {
       codeVersion: 'code-version-goes-here',
       maintenanceMessage: 'Down for maintenance',
       frontendConfig: {

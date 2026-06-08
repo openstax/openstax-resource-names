@@ -2,7 +2,7 @@
   "name": "@project/template",
   "version": "1.0.0",
   "dependencies": {
-    "@openstax/ts-utils": "1.27.2"
+    "@openstax/ts-utils": "1.48.1"
   },
   "devDependencies": {
     "syncpack": "^12.3.0"
