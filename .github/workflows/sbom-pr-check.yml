@@ -1,0 +1,49 @@
+name: sbom-pr-check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm sbom --sbom-format=cyclonedx > /tmp/head-sbom.json
+
+      - name: Generate base SBOM
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ github.base_ref }}"
+          git worktree add /tmp/base "origin/${{ github.base_ref }}"
+          (
+            cd /tmp/base
+            npm ci
+            npm sbom --sbom-format=cyclonedx > /tmp/base-sbom.json
+          )
+
+      # birder is private and this repo is public, so the run's GITHUB_TOKEN
+      # can't resolve openstax/birder actions directly. Check it out with a
+      # credential that can read it, then run the action from the local path.
+      - uses: actions/checkout@v4
+        with:
+          repository: openstax/birder
+          ref: main
+          path: .birder
+          token: ${{ secrets.SBOM_INVENTORY_TOKEN }}
+
+      - uses: ./.birder/.github/actions/check-pr-cves
+        with:
+          head-sbom: /tmp/head-sbom.json
+          base-sbom: /tmp/base-sbom.json

@@ -5,19 +5,15 @@
     <meta charset="utf-8" />
     <title>OpenStax</title>
     <meta name="robots" content="noindex" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
       content="OpenStax"
     />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
 
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -38,13 +34,13 @@
       gtag("set", "url_passthrough", false);
 
       dataLayer.push({
-        'os.release_id':'%REACT_APP_CODE_VERSION%',
-        'os.app':'%REACT_APP_NAME%',
+        'os.release_id':'%VITE_CODE_VERSION%',
+        'os.app':'%VITE_APP_NAME%',
         'os.user':window._OX_USER_DATA,
       });
 
       document.addEventListener('cookieyes_banner_load', (eventData) => {
-        const consentPreferences = window._OX_USER_DATA?.consent_preferences;
+        const consentPreferences = window._OX_USER_DATA?.consentPreferences;
         if (consentPreferences) {
           // Accounts remembers some state
           // We always defer to Accounts in this case
@@ -52,16 +48,22 @@
           // Only call the CookieYes API if it doesn't match what's in Accounts
           let doUpdate = !eventData.detail.isUserActionCompleted;
 
-          consentPreferences.accepted.forEach((accepted) => {
+          consentPreferences.accepted?.forEach((accepted) => {
             // There is no "necessary" switch
             if (accepted !== 'necessary') {
-              document.getElementById(`ckySwitch${accepted}`).checked = true;
-              if (!eventData.detail.categories[accepted]) { doUpdate = true; }
+              const switchElem = document.getElementById(`ckySwitch${accepted}`);
+              if (switchElem) {
+                switchElem.checked = true;
+                if (!eventData.detail.categories[accepted]) { doUpdate = true; }
+              }
             }
           });
-          consentPreferences.rejected.forEach((rejected) => {
-            document.getElementById(`ckySwitch${rejected}`).checked = false;
-            if (eventData.detail.categories[rejected]) { doUpdate = true; }
+          consentPreferences.rejected?.forEach((rejected) => {
+            const switchElem = document.getElementById(`ckySwitch${rejected}`);
+            if (switchElem) {
+              switchElem.checked = false;
+              if (eventData.detail.categories[rejected]) { doUpdate = true; }
+            }
           });
           if (doUpdate) { performBannerAction('accept_partial'); }
         }
@@ -87,15 +89,6 @@
     <!-- End Google Tag Manager (noscript) -->
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <main id="root"></main>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add web-fonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

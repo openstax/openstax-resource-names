@@ -1,6 +1,7 @@
 import { ConfigForConfigProvider, ConfigValueProvider, envConfig, resolveConfigValue } from '@openstax/ts-utils/config';
 import { once } from '@openstax/ts-utils/misc/helpers';
-import { apiHtmlResponse, apiJsonResponse, METHOD } from '@openstax/ts-utils/routing';
+import { apiHtmlResponse, apiJsonResponse, METHOD, routesList } from '@openstax/ts-utils/routing';
+import { TokenUser } from '@openstax/ts-utils/services/authProvider';
 import { FileServerAdapter } from '@openstax/ts-utils/services/fileServer';
 import { composeServiceMiddleware, createRoute } from '../../core/services';
 import { authMiddleware } from './middleware/authMiddleware';
@@ -37,10 +38,10 @@ const requestServiceProvider = composeServiceMiddleware(
 type EnvironmentConfigProvider = ReturnType<ReturnType<typeof configProvider>>['environmentConfig'];
 export type FrontendConfigProvider = EnvironmentConfigProvider['frontendConfig'];
 
-const resolveFrontendConfig = once(async(frontendConfig: FrontendConfigProvider) => {
+const resolveFrontendConfig = once(async(frontendConfig: FrontendConfigProvider, codeVersion: ConfigValueProvider<string>) => {
   const config: Record<string, ConfigValueProvider<string>> = {};
 
-  await Promise.all(Object.entries(frontendConfig).map(
+  await Promise.all(Object.entries({...frontendConfig, releaseId: codeVersion}).map(
     async([name, value]) => config[name] = await resolveConfigValue(value)
   ));
 
@@ -48,7 +49,7 @@ const resolveFrontendConfig = once(async(frontendConfig: FrontendConfigProvider)
 });
 
 export const makeIndexHtmlBody = async(fileServer: FileServerAdapter, config: EnvironmentConfigProvider) => {
-  const frontendConfig = await resolveFrontendConfig(config.frontendConfig);
+  const frontendConfig = await resolveFrontendConfig(config.frontendConfig, config.codeVersion);
   const maintenanceMessage = await resolveConfigValue(config.maintenanceMessage);
   const bodyFile = maintenanceMessage ? 'maintenance' : 'index';
 
@@ -76,7 +77,7 @@ export const apiV0Index = createRoute({name: 'apiV0Info', method: METHOD.GET, pa
   requestServiceProvider},
   async(_params: undefined, services) => {
     // This config is here for backwards compatibility and can eventually be removed
-    const config = await resolveFrontendConfig(services.environmentConfig.frontendConfig);
+    const config = await resolveFrontendConfig(services.environmentConfig.frontendConfig, services.environmentConfig.codeVersion);
 
     return apiJsonResponse(200, {
       code: await resolveConfigValue(services.environmentConfig.codeVersion),
@@ -85,6 +86,11 @@ export const apiV0Index = createRoute({name: 'apiV0Info', method: METHOD.GET, pa
   }
 );
 
+const oxUserData = (user: TokenUser, consentPreferences: { accepted?: string[]; rejected?: string[] } | undefined) => {
+  const { uuid } = user;
+  return JSON.stringify({ consentPreferences, uuid });
+};
+
 export const buildIndex = createRoute({name: 'buildIndex', method: METHOD.GET, path: '/build/index.html',
   requestServiceProvider: composeServiceMiddleware(
     requestServiceProvider,
@@ -92,7 +98,7 @@ export const buildIndex = createRoute({name: 'buildIndex', method: METHOD.GET, p
   )},
   async(_params: undefined, services) => {
     const token = await services.authProvider.getAuthToken();
-    const user = await services.authProvider.getUser();
+    const user = await services.authProvider.loadUserData();
 
     // Frontend config is already included
     const originalBody = await indexHtmlBody(services.frontendFileServer, services.environmentConfig);
@@ -108,7 +114,7 @@ export const buildIndex = createRoute({name: 'buildIndex', method: METHOD.GET, p
       `<head>
         <script>
           window._OX_AUTH_TOKEN = '${token}';
-          window._OX_USER_DATA = ${JSON.stringify(user)};
+          window._OX_USER_DATA = ${oxUserData(user, user.consent_preferences)};
         </script>`
     ): bodyWithSubcontent;
 
@@ -116,7 +122,7 @@ export const buildIndex = createRoute({name: 'buildIndex', method: METHOD.GET, p
   }
 );
 
-export const apiV0Routes = () => ([
+export const apiV0Routes = () => routesList([
   apiV0Index,
   buildIndex,
   ...apiV0OrnRoutes(),

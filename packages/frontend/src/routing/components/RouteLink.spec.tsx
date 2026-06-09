@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { createRouteLink } from "./RouteLink";
 import { TestServiceProvider, testServices } from "../../tests/testServices";
@@ -7,7 +8,7 @@ const testRoute = createRoute({name: 'TestScreen', path: '/', handler: () => <di
 const testPropsRoute = createRoute({
   name: 'TestPropsScreen',
   path: '/:prop',
-  handler: (props: {prop: string}) => <div />
+  handler: (_props: {prop: string}) => <div />
 });
 
 type RouteUnion = (typeof testRoute) | (typeof testPropsRoute);
@@ -18,12 +19,12 @@ describe('RouteLink', () => {
   it('renders a link', () => {
     render(<TestServiceProvider><RouteLink route={testRoute}>link text</RouteLink></TestServiceProvider>);
     expect(screen.getByText(/link text/i)).toMatchInlineSnapshot(`
-<a
-  href="/"
->
-  link text
-</a>
-`);
+      <a
+        href="/"
+      >
+        link text
+      </a>
+    `);
   });
 
   it('renders a link with props', () => {
@@ -31,12 +32,12 @@ describe('RouteLink', () => {
       <RouteLink route={testPropsRoute} params={{prop: 'value'}}>link text</RouteLink>
     </TestServiceProvider>);
     expect(screen.getByText(/link text/i)).toMatchInlineSnapshot(`
-<a
-  href="/value"
->
-  link text
-</a>
-`);
+      <a
+        href="/value"
+      >
+        link text
+      </a>
+    `);
   });
 
   it('pushes history', () => {
@@ -46,7 +47,7 @@ describe('RouteLink', () => {
       </TestServiceProvider>
     );
 
-    const pushSpy = jest.spyOn(testServices.history, 'push');
+    const pushSpy = vi.spyOn(testServices.history, 'push');
 
     fireEvent.click(screen.getByText(/link text/i));
 

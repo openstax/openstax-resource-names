@@ -1,102 +1,54 @@
 {
   "name": "@project/frontend",
   "version": "0.1.0",
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "dependencies": {
     "@openstax/orn-locator": "^1.4.0",
-    "@openstax/ts-utils": "1.27.2",
-    "@openstax/ui-components": "https://github.com/openstax/ui-components#1.18.0",
-    "@testing-library/jest-dom": "^5.14.1",
+    "@openstax/ts-utils": "1.48.1",
+    "@openstax/ui-components": "github:openstax/ui-components#1.22.2",
+    "@testing-library/jest-dom": "^6.4.7",
     "@testing-library/react": "^12.0.0",
     "@testing-library/user-event": "^13.2.1",
-    "@types/jest": "^29.1.1",
-    "@types/node": "^17.0.35",
+    "@types/node": "^24.2.0",
     "@types/react": "^17.0.20",
     "@types/react-dom": "^17.0.9",
     "@types/styled-components": "^5.1.25",
-    "crypto": "npm:crypto-browserify@^3.12.0",
     "history": "^5.3.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-scripts": "5.0.0",
-    "stream": "npm:stream-browserify@^3.0.0",
     "styled-components": "^5.3.5",
-    "typescript": "4.6",
-    "web-vitals": "^2.1.0"
+    "typescript": "5.9.2"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.16.7",
+    "@eslint/js": "^9.39.1",
     "@project/lambdas": "1.0.0",
-    "cspell": "^6.12.0",
-    "http-proxy-middleware": "0.19.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "cspell": "^10.0.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "jsdom": "^26.1.0",
     "npm-run-all": "^4.1.5",
-    "val-loader": "^4.0.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ],
-    "ignorePatterns": [
-      "node_modules",
-      "build",
-      "coverage"
-    ],
-    "rules": {
-      "semi": "off",
-      "@typescript-eslint/semi": [
-        "warn"
-      ],
-      "@typescript-eslint/member-delimiter-style": [
-        "warn"
-      ],
-      "max-len": [
-        "warn",
-        {
-          "code": 120,
-          "tabWidth": 4
-        }
-      ]
-    }
-  },
-  "jest": {
-    "coverageReporters": [
-      "text-summary",
-      "html",
-      "lcovonly"
-    ],
-    "collectCoverageFrom": [
-      "src/*/**/*.{js,ts,tsx}"
-    ],
-    "moduleNameMapper": {
-      "//comment//": "remove this when CRA upgrades jest above 28",
-      "(.*)@openstax/ts-utils(.*)": "$1@openstax/ts-utils/dist/cjs$2"
-    }
+    "typescript-eslint": "^8.48.0",
+    "vite": "^7.3.1",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.18"
   },
   "private": true,
   "scripts": {
-    "build": "react-scripts build",
-    "build:clean": "yarn clean && yarn build",
+    "build": "./script/build.bash",
+    "build:clean": "npm run build -- --clean",
     "ci": "CI=true npm-run-all ci:*",
     "ci:lint": "eslint --max-warnings=0 .",
-    "ci:spelling": "git ls-files | yarn cspell -c ../../cspell.json --file-list stdin",
-    "ci:test": "CI=true yarn test . --coverage",
+    "ci:spelling": "cspell -c ../../cspell.json --gitignore --gitignore-root ../.. '**'",
+    "ci:test": "vitest run --coverage",
     "ci:typecheck": "tsc --noEmit",
     "clean": "rm -rf build",
     "coverage-report": "open coverage/index.html",
-    "eject": "react-scripts eject",
+    "dev": "vite",
+    "preview": "vite preview",
     "start": "./script/start.bash",
-    "test": "react-scripts test"
+    "test": "vitest"
   }
 }

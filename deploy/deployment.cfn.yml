@@ -110,7 +110,7 @@ Resources:
       MemorySize: 512
       Timeout: 30 # logging stacktraces is surprisingly heavy
       Role: !GetAtt lambdaIAMRole.Arn
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Environment:
         Variables:
           ANCILLARIES_HOST: !Sub

@@ -4,7 +4,12 @@ set -euo pipefail; if [ -n "${DEBUG-}" ]; then set -x; fi
 
 project_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
 
-cd "$project_dir"
+cd "$project_dir";
 
-npm run build
-npm run ci --workspaces --if-present
+export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=8192"
+
+if ts-utils has-flag clean "$@"; then
+  rm -rf build
+fi
+
+vite build

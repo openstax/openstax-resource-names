@@ -1,7 +1,7 @@
 // spell-checker: ignore domutils
 
-declare var globalThis: any;
-declare var window: any | undefined;
+declare let globalThis: any;
+declare let window: any | undefined;
 
 const clean = (str: string) => str.replace(/\s+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
 

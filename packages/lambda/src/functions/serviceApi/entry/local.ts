@@ -1,3 +1,4 @@
+import {IncomingMessage, ServerResponse} from 'http';
 import path from 'path';
 import url from 'url';
 import { getKeyValue } from '@openstax/ts-utils';
@@ -5,7 +6,6 @@ import { assertString } from '@openstax/ts-utils/assertions';
 import { ifDefined } from '@openstax/ts-utils/guards';
 import { subrequestAuthProvider } from '@openstax/ts-utils/services/authProvider/subrequest';
 import { localFileServer } from '@openstax/ts-utils/services/fileServer/localFileServer';
-import {NextFunction, Request, Response} from 'express';
 import fetch from 'node-fetch';
 import queryString from 'query-string';
 import { createSearchContentClient } from '../../../services/searchClient/searchContentClient';
@@ -24,11 +24,11 @@ const services = {
 
 export type LocalServices = typeof services;
 
-export const handler = (request: Request, response: Response, next: NextFunction) => {
+export const handler = (request: IncomingMessage & {body?: Buffer}, response: ServerResponse, next: () => void) => {
   const getRequestResponse = getRequestResponder(services, composeResponseMiddleware(
     slowResponseMiddleware,
   ));
-  const {pathname, search} = url.parse(request.url);
+  const {pathname, search} = url.parse(request.url!);
 
   // https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#apigateway-example-event
   const payload = {
@@ -57,9 +57,15 @@ export const handler = (request: Request, response: Response, next: NextFunction
   }
 
   responsePromise.then(apiResponse => {
-    // TODO - other stuff in the response
-    response.status(ifDefined(apiResponse.statusCode, 200));
-    response.set(apiResponse.headers);
+    response.statusCode = ifDefined(apiResponse.statusCode, 200);
+
+    if (apiResponse.headers) {
+      for (const [key, value] of Object.entries(apiResponse.headers)) {
+        if (value !== undefined) {
+          response.setHeader(key, value);
+        }
+      }
+    }
 
     response.end(apiResponse.isBase64Encoded
       ? Buffer.from(apiResponse.body, 'base64')
