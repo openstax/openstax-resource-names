@@ -2,7 +2,11 @@ import queryString from 'query-string';
 import type { AnyOrnLocateResponse, SearchResponse } from './resolve';
 import { acceptResponse } from './utils/acceptResponse';
 
-const locateHost = process.env.ORN_LOCATE_HOST || process.env.REACT_APP_ORN_LOCATE_HOST || 'https://orn.openstax.org';
+// process may be undefined in the browser (e.g. Vite doesn't shim it)
+const env = (key: string): string | undefined =>
+  typeof process !== 'undefined' && process.env ? process.env[key] : undefined;
+
+const locateHost = env('ORN_LOCATE_HOST') || env('REACT_APP_ORN_LOCATE_HOST') || env('VITE_ORN_LOCATE_HOST') || 'https://orn.openstax.org';
 
 export const locate = async (orn: string): Promise<AnyOrnLocateResponse> => {
   return fetch(locateHost + (new URL(orn)).pathname + '.json')
