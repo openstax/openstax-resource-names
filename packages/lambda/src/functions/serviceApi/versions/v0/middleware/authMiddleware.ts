@@ -1,4 +1,5 @@
-import { envConfig, lambdaParameterConfig, replaceConfig } from '@openstax/ts-utils/config';
+import { envConfig, replaceConfig } from '@openstax/ts-utils/config';
+import { lambdaParameterConfig } from '@openstax/ts-utils/config/lambdaParameterConfig';
 import type { Logger } from '@openstax/ts-utils/services/logger';
 import { ApiRouteRequest, AppServices } from '../../../core';
 
