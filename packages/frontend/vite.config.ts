@@ -2,7 +2,6 @@
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import fs from 'node:fs';
 
 function lambdaProxyPlugin(): Plugin {
@@ -18,21 +17,19 @@ function lambdaProxyPlugin(): Plugin {
 export default defineConfig({
   plugins: [
     react(),
-    tsconfigPaths(),
     lambdaProxyPlugin(),
   ],
 
   resolve: {
     preserveSymlinks: true,
+    // Replaces the vite-tsconfig-paths plugin; native in Vite 8 (experimental).
+    tsconfigPaths: true,
   },
   base: process.env.PUBLIC_URL || '/',
 
   build: {
     outDir: 'build',
     sourcemap: true,
-    commonjsOptions: {
-      include: [/node_modules/, /packages\/lambda\/build/],
-    },
   },
 
   server: {
