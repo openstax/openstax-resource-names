@@ -4,7 +4,7 @@
   "dependencies": {
     "@openstax/open-search-client": "^0.1.0-build.8",
     "@openstax/orn-locator": "^1.4.1",
-    "@openstax/ts-utils": "1.50.0",
+    "@openstax/ts-utils": "1.50.2",
     "aws-xray-sdk": "^3.6.0",
     "body-parser": "^1.19.2",
     "node-fetch": "^2.7.0",
@@ -21,6 +21,7 @@
     "@types/node-fetch": "^2.6.11",
     "@types/supertest": "^2.0.12",
     "builtin-modules": "^3.2.0",
+    "busboy": "^1.6.0",
     "cspell": "^10.0.0",
     "eslint": "^9.39.1",
     "eslint-plugin-import-x": "^4.15.0",

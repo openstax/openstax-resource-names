@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@openstax/orn-locator": "^1.4.1",
-    "@openstax/ts-utils": "1.50.0",
+    "@openstax/ts-utils": "1.50.2",
     "@openstax/ui-components": "github:openstax/ui-components#1.23.0",
     "@testing-library/jest-dom": "^6.4.7",
     "@testing-library/react": "^16.3.2",
