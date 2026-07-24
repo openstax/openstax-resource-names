@@ -30,6 +30,8 @@ jobs:
       - run: npm sbom --sbom-format=cyclonedx > /tmp/head-sbom.json
 
       - name: Generate base SBOM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           git fetch origin "${{ github.base_ref }}"
