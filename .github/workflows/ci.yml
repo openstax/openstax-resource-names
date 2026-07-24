@@ -16,6 +16,9 @@ jobs:
   test:
     name: checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +33,10 @@ jobs:
       with:
         node-version-file: .nvmrc
         cache: npm
+    - run: echo '//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}' >> ~/.npmrc
     - run: npm ci
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: npm run build
     - run: npm run ci
       working-directory: packages/${{ matrix.module }}

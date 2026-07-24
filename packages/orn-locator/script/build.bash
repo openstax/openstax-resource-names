@@ -12,15 +12,16 @@ function hasArg() {
   node -e "if (!require('yargs').argv['$1']) { process.exit(1) }" -- yargs "${args[@]+"${args[@]}"}"
 }
 
-tsc_args=(--noEmit false --declaration)
+tsc_args=(--noEmit false --declaration --preserveWatchOutput)
 
 if hasArg watch; then
   tsc_args+=(--watch)
 fi
 if hasArg clean; then
-  rm -rf ./dist/*
+  rm -rf "$project_dir"/dist
 fi
 
 mkdir -p dist
 
-tsc --project tsconfig.withoutspecs.json "${tsc_args[@]}"
+tsc --project tsconfig.without-specs.esm.json "${tsc_args[@]}"
+tsc --project tsconfig.without-specs.cjs.json "${tsc_args[@]}"

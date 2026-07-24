@@ -26,6 +26,9 @@ jobs:
   spelling:
     name: spelling
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     env:
       CI: true
     steps:
@@ -36,11 +39,17 @@ jobs:
       with:
         node-version-file: .nvmrc
         cache: npm
+    - run: echo '//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}' >> ~/.npmrc
     - run: npm ci
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: npm run ci:spelling
   syncpack:
     name: versions
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     env:
       CI: true
     steps:
@@ -51,5 +60,8 @@ jobs:
       with:
         node-version-file: .nvmrc
         cache: npm
+    - run: echo '//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}' >> ~/.npmrc
     - run: npm ci
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: npm run ci:versions

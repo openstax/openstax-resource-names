@@ -11,7 +11,7 @@ const locateHost = env('ORN_LOCATE_HOST') || env('REACT_APP_ORN_LOCATE_HOST') ||
 export const locate = async (orn: string): Promise<AnyOrnLocateResponse> => {
   return fetch(locateHost + (new URL(orn)).pathname + '.json')
     .then(response => acceptResponse(response))
-    .then(response => response.json());
+    .then(response => response.json() as any);
 };
 
 export const locateAll = async(orn: string[]): Promise<AnyOrnLocateResponse[]> => {
@@ -20,7 +20,7 @@ export const locateAll = async(orn: string[]): Promise<AnyOrnLocateResponse[]> =
   }
   return fetch(locateHost + '/api/v0/orn-lookup?' + queryString.stringify({orn}))
     .then(response => acceptResponse(response))
-    .then(response => response.json())
+    .then(response => response.json() as any)
     .then(response => response.items)
   ;
 };
@@ -28,6 +28,6 @@ export const locateAll = async(orn: string[]): Promise<AnyOrnLocateResponse[]> =
 export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}): Promise<SearchResponse> => {
   return fetch(locateHost + '/api/v0/search?' + queryString.stringify({query, limit, ...filters}))
     .then(response => acceptResponse(response))
-    .then(response => response.json())
+    .then(response => response.json() as any)
   ;
 };

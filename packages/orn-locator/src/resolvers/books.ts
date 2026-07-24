@@ -3,7 +3,6 @@ import { SearchResultHitSourceElement } from '@openstax/open-search-client';
 import { memoize, } from '@openstax/ts-utils';
 import { assertInstanceOf } from '@openstax/ts-utils/assertions';
 import { isPlainObject } from '@openstax/ts-utils/guards';
-import fetch from 'cross-fetch';
 import asyncPool from 'tiny-async-pool/lib/es6';
 import { locateAll, LocateAllOptions } from '../resolve';
 import type { SearchClient } from '../types/searchClient';
@@ -18,7 +17,7 @@ const preloadedData = (file: string) => import('../data/' + file);
 export const getReleaseJson = memoize(async () => preloadedData('release.json').catch(() => {
   return fetch('https://openstax.org/rex/release.json')
     .then(response => acceptResponse(response))
-    .then(response => response.json())
+    .then(response => response.json() as any)
   ;
 }));
 
@@ -91,7 +90,7 @@ const archiveBook = async(bookId: string, bookContentVersion?: string, bookArchi
     .catch(() =>
       fetch(`https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}.json`)
         .then(response => acceptResponse(response))
-        .then(response => response.json())
+        .then(response => response.json() as any)
     );
 };
 
@@ -110,7 +109,7 @@ const cacheLiveOswebBooks = async(language: string) => {
   while (offset < total_count) {
     const responseData = await fetch(`${apiUrl}&offset=${offset}`)
       .then((response) => acceptResponse(response))
-      .then((response => response.json()));
+      .then((response => response.json() as any));
 
     const { items } = responseData;
     if (items.length === 0) { break; }
@@ -299,7 +298,7 @@ export const subbook = async(
   const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}.json`;
   const archiveData = await fetch(archiveUrl)
     .then(response => acceptResponse(response))
-    .then(response => response.json())
+    .then(response => response.json() as any)
   ;
 
   const tree = findTreeNodeById(subbookId, archiveData.tree);
@@ -359,7 +358,7 @@ const pageWithData = async(
   const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}:${pageId}.json`;
   const archiveData = await fetch(archiveUrl)
     .then(response => acceptResponse(response))
-    .then(response => response.json())
+    .then(response => response.json() as any)
   ;
 
   const rexUrl = `https://openstax.org/books/${bookData.slug}/pages/${archiveData.slug}`;

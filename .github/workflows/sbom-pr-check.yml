@@ -9,6 +9,9 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,7 +22,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: echo '//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}' >> ~/.npmrc
       - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm sbom --sbom-format=cyclonedx > /tmp/head-sbom.json
 
       - name: Generate base SBOM

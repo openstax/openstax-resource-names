@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.without-specs",
+  "compilerOptions": {
+    "module": "es2020",
+    "outDir": "dist/esm"
+  }
+}
