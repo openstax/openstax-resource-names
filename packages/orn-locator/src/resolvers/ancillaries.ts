@@ -5,14 +5,14 @@ const ancillariesHost = process.env.ANCILLARIES_HOST || process.env.REACT_APP_AN
 export const ancillary = async(id: string) => {
   const data = await fetch(`${ancillariesHost}api/v0/ancillaries/${id}/compiled`)
     .then(response => acceptResponse(response))
-    .then(response => response.json());
+    .then(response => response.json() as any);
 
   return formatAncillaryData(data);
 };
 
 export const search = async(query: string, _limit: number) => {
   const results = await fetch(`${ancillariesHost}api/v0/ancillaries?query=${encodeURIComponent(query)}&publicationState=published`)
-    .then(response => response.json());
+    .then(response => response.json() as any);
 
   return results.items.map(formatAncillaryData);
 };

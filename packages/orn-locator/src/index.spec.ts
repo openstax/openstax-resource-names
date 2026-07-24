@@ -1,4 +1,3 @@
-import { Response } from 'node-fetch';
 import { locate, locateAll } from '.';
 
 let originalFetch: typeof global.fetch;
