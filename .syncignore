@@ -3,3 +3,4 @@ docs/*
 example/*
 packages/utils/*
 .claude/skills/*
+scripts/audit-downstream-sync.bash
