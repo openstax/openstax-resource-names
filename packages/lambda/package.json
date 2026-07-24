@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@openstax/open-search-client": "^0.1.0-build.8",
-    "@openstax/orn-locator": "^1.4.1",
+    "@openstax/orn-locator": "1.5.0",
     "@openstax/ts-utils": "1.50.2",
     "aws-xray-sdk": "^3.6.0",
     "body-parser": "^1.19.2",
