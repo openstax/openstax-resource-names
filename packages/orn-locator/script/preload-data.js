@@ -24,7 +24,7 @@ const preloadData = async() => {
       })
   ];
 
-  fs.mkdirSync(dataDir, {recursive: true});
+  fs.mkdirSync(dataDir);
 
   for (const load of files) {
     const [fileName, data] = await load();
