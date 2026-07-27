@@ -12,7 +12,11 @@ import { TitleParts, titleSplit } from '../utils/browsersafe-title-split';
 const oswebUrl = 'https://openstax.org/apps/cms/api/v2/pages';
 const fields = 'cnx_id,authors,publish_date,cover_color,amazon_link,book_state,book_subjects,book_categories,promote_image,webview_rex_link,cover_url,title_image_url';
 
-const preloadedData = (file: string) => import('../data/' + file);
+// the extra `..` is deliberate: this path is relative to where the compiled file
+// runs, dist/{cjs,esm}/resolvers/, which is one level deeper than src/resolvers/.
+// that resolves to dist/data for both builds, so the data written by
+// script/preload-data.js at deploy time is shared rather than duplicated per build.
+const preloadedData = (file: string) => import('../../data/' + file);
 
 export const getReleaseJson = memoize(async () => preloadedData('release.json').catch(() => {
   return fetch('https://openstax.org/rex/release.json')

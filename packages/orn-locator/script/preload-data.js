@@ -3,9 +3,9 @@ const path = require('path');
 const fetch = require('node-fetch');
 const { getReleaseJson, bookCacheKey, getArchiveInfo } = require('../dist/cjs/resolvers/books.js')
 
-// the cjs build is what the lambda bundle resolves through the `require` export
-// condition, and books.js reads this data back via `import('../data/' + file)`
-const dataDir = path.join(__dirname, '../dist/cjs/data');
+// shared by both builds: dist/{cjs,esm}/resolvers/books.js reads this back via
+// `import('../../data/' + file)`
+const dataDir = path.join(__dirname, '../dist/data');
 
 const preloadData = async() => {
   const releaseJson = await getReleaseJson();
