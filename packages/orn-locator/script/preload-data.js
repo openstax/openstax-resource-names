@@ -1,7 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
-const { getReleaseJson, bookCacheKey, getArchiveInfo } = require('../dist/resolvers/books.js')
+const { getReleaseJson, bookCacheKey, getArchiveInfo } = require('../dist/cjs/resolvers/books.js')
+
+// shared by both builds: dist/{cjs,esm}/resolvers/books.js reads this back via
+// `import('../../data/' + file)`
+const dataDir = path.join(__dirname, '../dist/data');
 
 const preloadData = async() => {
   const releaseJson = await getReleaseJson();
@@ -20,12 +24,12 @@ const preloadData = async() => {
       })
   ];
 
-  fs.mkdirSync(path.join(__dirname, '../dist/data'));
+  fs.mkdirSync(dataDir);
 
   for (const load of files) {
     const [fileName, data] = await load();
     console.log('writing ' + fileName);
-    fs.writeFileSync(path.join(__dirname, '../dist/data',  fileName), data);
+    fs.writeFileSync(path.join(dataDir, fileName), data);
   }
 };
 
