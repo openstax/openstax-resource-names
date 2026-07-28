@@ -213,7 +213,7 @@ const mapTocType = (tree: any): TocTypes => {
 };
 
 type TreeNodeDataWithoutChildren = TreePageElement | Omit<TreeSubTree, 'contents'>;
-const mapTreeNodeData = (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => (tree: any): TreeNodeDataWithoutChildren => {
+const mapTreeNodeData = (bookId: string, bookContentVersion: string, bookArchiveVersion: string) => (tree: any): TreeNodeDataWithoutChildren => {
   if (tree.contents) {
     const subTreeId = tree.id.split('@')[0];
     const default_page = findTreeNode(t => !('contents' in t), tree);
@@ -242,7 +242,7 @@ const mapTreeNodeData = (bookId: string, bookContentVersion?: string, bookArchiv
   }
 };
 
-const mapTree = (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => (tree: any): TreeElement => {
+const mapTree = (bookId: string, bookContentVersion: string, bookArchiveVersion: string) => (tree: any): TreeElement => {
   if (tree.contents) {
     return {
       ...mapTreeNodeData(bookId, bookContentVersion, bookArchiveVersion)(tree),
@@ -330,7 +330,7 @@ const recursiveContext = (node: any): any[] => {
   }
 };
 
-const syncPageNodeData = (page: any, archiveBook: any, bookContentVersion?: string, bookArchiveVersion?: string) => {
+const syncPageNodeData = (page: any, archiveBook: any, bookContentVersion: string, bookArchiveVersion: string) => {
   const pageId = page.id.split('@')[0];
   const bookId = archiveBook.id;
   const treeNode = findTreeNodeById(pageId, archiveBook.tree);
