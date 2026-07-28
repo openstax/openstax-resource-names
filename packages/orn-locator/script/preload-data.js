@@ -15,10 +15,10 @@ const preloadData = async() => {
     ...Object.entries(releaseJson.books)
       .filter(([, config]) => config.retired !== true)
       .map(([id]) => async() => {
-        const {archivePath, bookVersion} = await getArchiveInfo(id);
+        const {archiveVersion, bookVersion} = await getArchiveInfo(id);
         return [
-          bookCacheKey(archivePath, id, bookVersion),
-          await fetch(`https://openstax.org${archivePath}/contents/${id}@${bookVersion}.json`)
+          bookCacheKey(archiveVersion, id, bookVersion),
+          await fetch(`https://openstax.org/apps/archive/${archiveVersion}/contents/${id}@${bookVersion}.json`)
             .then(response => response.text())
         ];
       })

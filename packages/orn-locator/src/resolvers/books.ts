@@ -26,17 +26,15 @@ export const getReleaseJson = memoize(async () => preloadedData('release.json').
 }));
 
 export const getArchiveInfo = memoize(async (bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => {
-  const archivePath = bookArchiveVersion ? `/apps/archive/${bookArchiveVersion}` : null;
-
-  if (archivePath && bookContentVersion) {
-    return { archivePath, bookVersion: bookContentVersion };
+  if (bookArchiveVersion && bookContentVersion) {
+    return { archiveVersion: bookArchiveVersion, bookVersion: bookContentVersion };
   }
 
   const releaseJson = await getReleaseJson();
   const bookConfig = releaseJson.books[bookId];
 
   return {
-    archivePath: archivePath || bookConfig.archiveOverride || releaseJson.archiveUrl,
+    archiveVersion: bookArchiveVersion || (bookConfig.archiveOverride || releaseJson.archiveUrl).replace(/^\/apps\/archive\//, ''),
     bookVersion: bookContentVersion || bookConfig.defaultVersion,
   };
 });
@@ -85,17 +83,18 @@ export const library = async(language: string = 'all') => {
   };
 };
 
-export const bookCacheKey = (archivePath: string, id: string, bookVersion: string) =>
-  `${archivePath.replace(/^\/apps\/archive\//, '')}-${id}@${bookVersion}.json`;
+export const bookCacheKey = (archiveVersion: string, id: string, bookVersion: string) =>
+  `${archiveVersion}-${id}@${bookVersion}.json`;
 
 const archiveBook = async(bookId: string, bookContentVersion?: string, bookArchiveVersion?: string) => {
-  const {archivePath, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
-  return preloadedData(bookCacheKey(archivePath, bookId, bookVersion))
+  const {archiveVersion, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
+  const data = await preloadedData(bookCacheKey(archiveVersion, bookId, bookVersion))
     .catch(() =>
-      fetch(`https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}.json`)
+      fetch(`https://openstax.org/apps/archive/${archiveVersion}/contents/${bookId}@${bookVersion}.json`)
         .then(response => acceptResponse(response))
         .then(response => response.json() as any)
     );
+  return {archiveVersion, bookVersion, data};
 };
 
 type BookSubject = { id: number; subject_name: string };
@@ -140,7 +139,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
     .then(data => data.items[0])
   ;
 
-  const archiveData = await archiveBook(id, version, archive);
+  const {archiveVersion, bookVersion, data: archiveData} = await archiveBook(id, version, archive);
   const default_page_slug = oswebData.webview_rex_link.match(/\/books\/.*\/pages\/(.*)$/)?.[1] as string;
   const default_page = default_page_slug && findTreeNodeBySlug(default_page_slug, archiveData.tree);
 
@@ -155,10 +154,12 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
   return {
     oswebData,
     archiveData,
+    bookVersion,
+    archiveVersion,
     book: {
       id,
       orn: `https://openstax.org/orn/book/${id}`,
-      versionedOrn: `https://openstax.org/orn/book/${id}${version ? `@${version}${archive ? `:${archive}` : ''}` : ''}`,
+      versionedOrn: `https://openstax.org/orn/book/${id}@${bookVersion}:${archiveVersion}`,
       type: 'book' as const,
       state: oswebData.book_state as string,
       title: oswebData.title as string,
@@ -166,7 +167,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
       categories: categories as BookCategory[],
       language: archiveData.language as string,
       slug: oswebData.meta.slug as string,
-      default_page: default_page ? mapTree(id, version, archive)(default_page) : undefined,
+      default_page: default_page ? mapTree(id, bookVersion, archiveVersion)(default_page) : undefined,
       theme: oswebData.cover_color as string,
       license: {
         holder: 'OpenStax',
@@ -222,7 +223,7 @@ const mapTreeNodeData = (bookId: string, bookContentVersion?: string, bookArchiv
       titleParts: titleSplit(tree.title),
       default_page: default_page ? mapTree(bookId, bookContentVersion, bookArchiveVersion)(default_page) as TreePageElement : undefined,
       orn: `https://openstax.org/orn/book:subbook/${bookId}:${subTreeId}`,
-      versionedOrn: `https://openstax.org/orn/book:subbook/${bookId}${bookContentVersion ? `@${bookContentVersion}${bookArchiveVersion ? `:${bookArchiveVersion}` : ''}` : ''}:${subTreeId}`,
+      versionedOrn: `https://openstax.org/orn/book:subbook/${bookId}@${bookContentVersion}:${bookArchiveVersion}:${subTreeId}`,
       type: 'book:subbook',
       ...mapTocType(tree),
     };
@@ -233,7 +234,7 @@ const mapTreeNodeData = (bookId: string, bookContentVersion?: string, bookArchiv
       title: tree.title,
       titleParts: titleSplit(tree.title),
       orn: `https://openstax.org/orn/book:page/${bookId}:${pageId}`,
-      versionedOrn: `https://openstax.org/orn/book:page/${bookId}${bookContentVersion ? `@${bookContentVersion}${bookArchiveVersion ? `:${bookArchiveVersion}` : ''}` : ''}:${pageId}`,
+      versionedOrn: `https://openstax.org/orn/book:page/${bookId}@${bookContentVersion}:${bookArchiveVersion}:${pageId}`,
       slug: tree.slug,
       type: 'book:page',
       ...mapTocType(tree),
@@ -283,7 +284,7 @@ const bookDetailAndFriends = async(id: string, version?: string, archive?: strin
     ...friends,
     book: {
       ...friends.book,
-      contents: (friends.archiveData.tree.contents as any[]).map(mapTree(id, version, archive)),
+      contents: (friends.archiveData.tree.contents as any[]).map(mapTree(id, friends.bookVersion, friends.archiveVersion)),
     }
   };
 };
@@ -298,8 +299,8 @@ export const subbook = async(
   }
 ) => {
   const bookData = await book(bookId, bookContentVersion, bookArchiveVersion);
-  const {archivePath, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
-  const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}.json`;
+  const {archiveVersion, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
+  const archiveUrl = `https://openstax.org/apps/archive/${archiveVersion}/contents/${bookId}@${bookVersion}.json`;
   const archiveData = await fetch(archiveUrl)
     .then(response => acceptResponse(response))
     .then(response => response.json() as any)
@@ -313,10 +314,10 @@ export const subbook = async(
     title: tree.title as string,
     titleParts: titleSplit(tree.title),
     book: bookData,
-    default_page: default_page ? mapTree(bookId, bookContentVersion, bookArchiveVersion)(default_page) : undefined,
-    contents: (tree.contents as any[]).map(mapTree(bookId, bookContentVersion, bookArchiveVersion)),
+    default_page: default_page ? mapTree(bookId, bookVersion, archiveVersion)(default_page) : undefined,
+    contents: (tree.contents as any[]).map(mapTree(bookId, bookVersion, archiveVersion)),
     orn: `https://openstax.org/orn/book:subbook/${bookId}:${subbookId}`,
-    versionedOrn: `https://openstax.org/orn/book:subbook/${bookId}${bookContentVersion ? `@${bookContentVersion}${bookArchiveVersion ? `:${bookArchiveVersion}` : ''}` : ''}:${subbookId}`,
+    versionedOrn: `https://openstax.org/orn/book:subbook/${bookId}@${bookVersion}:${archiveVersion}:${subbookId}`,
     type: 'book:subbook' as const,
   };
 };
@@ -355,11 +356,10 @@ const pageWithData = async(
     bookArchiveVersion?: string; bookId: string; bookContentVersion?: string; pageId: string;
   }
 ) => {
-  const {archiveData: archiveBook, book: bookData} = await commonBook(bookId, bookContentVersion, bookArchiveVersion);
-  const treeNode = findTreeNodeById(pageId, archiveBook.tree);
+  const {archiveData: archiveBookData, book: bookData, bookVersion, archiveVersion} = await commonBook(bookId, bookContentVersion, bookArchiveVersion);
+  const treeNode = findTreeNodeById(pageId, archiveBookData.tree);
 
-  const {archivePath, bookVersion} = await getArchiveInfo(bookId, bookContentVersion, bookArchiveVersion);
-  const archiveUrl = `https://openstax.org${archivePath}/contents/${bookId}@${bookVersion}:${pageId}.json`;
+  const archiveUrl = `https://openstax.org/apps/archive/${archiveVersion}/contents/${bookId}@${bookVersion}:${pageId}.json`;
   const archiveData = await fetch(archiveUrl)
     .then(response => acceptResponse(response))
     .then(response => response.json() as any)
@@ -368,7 +368,7 @@ const pageWithData = async(
   const rexUrl = `https://openstax.org/books/${bookData.slug}/pages/${archiveData.slug}`;
 
   return [bookData, archiveData, {
-    ...syncPageNodeData(treeNode, archiveBook, bookContentVersion, bookArchiveVersion),
+    ...syncPageNodeData(treeNode, archiveBookData, bookVersion, archiveVersion),
     title: archiveData.title as string,
     book: bookData,
     slug: archiveData.slug as string,
@@ -376,7 +376,7 @@ const pageWithData = async(
       main: rexUrl as string,
       experience: rexUrl as string
     }
-  }] as const;
+  }, bookVersion, archiveVersion] as const;
 };
 
 export const page = async(args: {bookArchiveVersion?: string; bookId: string; bookContentVersion?: string; pageId: string}) => {
@@ -385,14 +385,14 @@ export const page = async(args: {bookArchiveVersion?: string; bookId: string; bo
 };
 
 export const element = async({bookArchiveVersion, bookId, bookContentVersion, pageId, elementId}: {bookArchiveVersion?: string; bookId: string; bookContentVersion?: string; pageId: string; elementId: string}) => {
-  const [,, pageResponse] = await pageWithData({bookArchiveVersion, bookId, bookContentVersion, pageId});
+  const [,, pageResponse, bookVersion, archiveVersion] = await pageWithData({bookArchiveVersion, bookId, bookContentVersion, pageId});
 
   const url = `${pageResponse.urls.experience}#${elementId}`;
   const title = `Element in ${pageResponse.contextTitle}`;
 
   return {
     orn: `https://openstax.org/orn/book:page:element/${bookId}:${pageId}:${elementId}`,
-    versionedOrn: `https://openstax.org/orn/book:page:element/${bookId}${bookContentVersion ? `@${bookContentVersion}${bookArchiveVersion ? `:${bookArchiveVersion}` : ''}` : ''}:${pageId}:${elementId}`,
+    versionedOrn: `https://openstax.org/orn/book:page:element/${bookId}@${bookVersion}:${archiveVersion}:${pageId}:${elementId}`,
     id: elementId,
     title,
     type: 'book:page:element' as const,
