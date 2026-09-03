@@ -3,7 +3,7 @@
   "version": "1.5.2",
   "dependencies": {
     "@openstax/open-search-client": "^0.1.1",
-    "@openstax/ts-utils": "1.51.0",
+    "@openstax/ts-utils": "^1.51.0",
     "domutils": "^3.0.1",
     "htmlparser2": "^8.0.1",
     "path-to-regexp": "^6.2.0",
@@ -49,16 +49,15 @@
     "dist"
   ],
   "license": "MIT",
+  "main": "index.js",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/openstax/openstax-resource-names.git",
     "directory": "packages/orn-locator"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "main": "index.js",
-  "sideEffects": false,
   "scripts": {
     "build": "./script/build.bash",
     "build:clean": "npm run clean && npm run build",
@@ -74,6 +73,7 @@
     "start": "./script/build.bash --watch",
     "test": "jest"
   },
+  "sideEffects": false,
   "types": "index.d.ts",
   "typesVersions": {
     "*": {
