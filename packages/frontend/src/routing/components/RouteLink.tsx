@@ -1,5 +1,6 @@
 import React from 'react';
-import { ParamsForRoute, renderAnyRouteUrl, AnyRoute, QueryParams } from "@openstax/ts-utils/routing";
+import type { InputQueryParams } from "@openstax/ts-utils/misc/queryString";
+import { type ParamsForRoute, renderAnyRouteUrl, type AnyRoute } from "@openstax/ts-utils/routing";
 import { useServices } from "core/context/services";
 import { TRoutes } from "core";
 
@@ -23,7 +24,7 @@ export function useRouteLinkOnClick() {
 export const createRouteLink = <Ru,>() => <R extends Ru>(
   {
     route, params, query, children, ...props
-  }: React.PropsWithChildren<{route: R extends AnyRoute<R> ? R : never; query?: QueryParams}> & (
+  }: React.PropsWithChildren<{route: R extends AnyRoute<R> ? R : never; query?: InputQueryParams}> & (
     ParamsForRoute<R> extends undefined ? {params?: undefined} : {params: ParamsForRoute<R>}
   ) & React.HTMLProps<HTMLAnchorElement>
 ) => {

@@ -2,9 +2,10 @@
   "name": "@project/template",
   "version": "1.0.0",
   "dependencies": {
-    "@openstax/ts-utils": "1.50.2"
+    "@openstax/ts-utils": "1.51.0"
   },
   "devDependencies": {
+    "npm-run-all2": "^9.0.2",
     "syncpack": "^15.1.2"
   },
   "private": true,

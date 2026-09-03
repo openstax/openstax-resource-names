@@ -1,6 +1,6 @@
-import queryString from 'query-string';
+import { parse } from "@openstax/ts-utils/misc/queryString";
 import { AppServices } from "../core/types";
 
 export const getQuery = ({history}: AppServices) => {
-  return queryString.parse(history.location.search);
+  return parse(history.location.search);
 };

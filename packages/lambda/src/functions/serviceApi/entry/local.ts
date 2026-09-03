@@ -39,7 +39,7 @@ export const handler = (request: IncomingMessage & {body?: Buffer}, response: Se
     // APIGatewayProxyEventV2 no longer has multiValueQueryStringParameters, instead it joins multiple values on comma
     queryStringParameters: search
       ? Object.fromEntries(
-        Object.entries(queryString.parse(search)).map(([key, entry]) => [key, entry instanceof Array ? entry.join(',') : entry])
+        Object.entries(parse(search)).map(([key, entry]) => [key, Array.isArray(entry) ? entry.join(',') : entry])
       )
       : undefined,
     requestContext: {
