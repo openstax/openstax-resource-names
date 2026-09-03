@@ -50,9 +50,7 @@ const Router = () => {
 const ErrorBoundaryComponent = () => {
   return (
     <ErrorBoundary
-      renderFallback
       // sentryDsn='https://examplePublicKey@o0.ingest.sentry.io/0'
-
     >
       <Router />
     </ErrorBoundary>
