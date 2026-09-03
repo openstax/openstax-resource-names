@@ -1,6 +1,5 @@
 // spell-checker: ignore domutils
 
-const globals = globalThis as any;
 declare let window: any | undefined;
 
 const clean = (str: string) => str.replace(/\s+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
@@ -10,6 +9,7 @@ export type TitleParts = {html: string; title: string; numberText: string | null
 export const titleSplit = (html: string) => {
 
   if (typeof window === 'undefined') {
+    const globals = globalThis as any;
     const titleDoc = globals.parseDocument(html);
 
     const numberElement = globals.domutils.findOne((node: any) => node.attribs.class.includes('os-number'), titleDoc.children);
