@@ -1,6 +1,6 @@
 // spell-checker: ignore domutils
 
-declare let globalThis: any;
+const globals = globalThis as any;
 declare let window: any | undefined;
 
 const clean = (str: string) => str.replace(/\s+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
@@ -10,19 +10,19 @@ export type TitleParts = {html: string; title: string; numberText: string | null
 export const titleSplit = (html: string) => {
 
   if (typeof window === 'undefined') {
-    const titleDoc = globalThis.parseDocument(html);
+    const titleDoc = globals.parseDocument(html);
 
-    const numberElement = globalThis.domutils.findOne((node: any) => node.attribs.class.includes('os-number'), titleDoc.children);
+    const numberElement = globals.domutils.findOne((node: any) => node.attribs.class.includes('os-number'), titleDoc.children);
     const numberWithoutText = numberElement?.children.filter((node: any) => !node.attribs?.class.includes('os-part-text'));
-    const justTheNumber = numberWithoutText && numberWithoutText.length > 0 && globalThis.domutils.textContent(numberWithoutText);
-    const numberTextPart = numberElement && globalThis.domutils.textContent(numberElement);
-    const shortTitleElement = globalThis.domutils.findOne((node: any) => node.attribs.class === 'os-text', titleDoc.children);
-    const shortTitle = shortTitleElement && globalThis.domutils.textContent(shortTitleElement);
+    const justTheNumber = numberWithoutText && numberWithoutText.length > 0 && globals.domutils.textContent(numberWithoutText);
+    const numberTextPart = numberElement && globals.domutils.textContent(numberElement);
+    const shortTitleElement = globals.domutils.findOne((node: any) => node.attribs.class === 'os-text', titleDoc.children);
+    const shortTitle = shortTitleElement && globals.domutils.textContent(shortTitleElement);
     return {
       html,
       number: justTheNumber ? clean(justTheNumber): justTheNumber, 
       numberText: numberTextPart ? clean(numberTextPart) : numberTextPart,
-      title: clean(globalThis.domutils.textContent(titleDoc)),
+      title: clean(globals.domutils.textContent(titleDoc)),
       shortTitle: shortTitle ? clean(shortTitle) : shortTitle,
     };
   } else {
