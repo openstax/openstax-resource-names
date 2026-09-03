@@ -4,7 +4,7 @@
       "label": "use exact versions",
       "packages": ["**"],
       "dependencyTypes": ["**"],
-      "dependencies": ["@openstax/orn", "@openstax/ts-utils", "typescript", "@project/*"],
+      "dependencies": ["@openstax/orn-locator", "@openstax/ts-utils", "typescript", "@project/*"],
       "range": ""
     },
     {
