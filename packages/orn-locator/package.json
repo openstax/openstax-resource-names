@@ -1,6 +1,6 @@
 {
   "name": "@openstax/orn-locator",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "dependencies": {
     "@openstax/open-search-client": "^0.1.1",
     "@openstax/ts-utils": "1.51.0",
