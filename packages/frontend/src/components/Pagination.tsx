@@ -1,7 +1,7 @@
 import React from 'react';
 import * as UI from '@openstax/ui-components';
 import { useQuery } from 'routing/useQuery';
-import queryString from 'query-string';
+import { stringify } from '@openstax/ts-utils/misc/queryString';
 import { useRouteLinkOnClick } from 'routing/components/RouteLink';
 
 export const Pagination = (props: {
@@ -18,7 +18,7 @@ export const Pagination = (props: {
     Page={({ page, current }) => {
       return <UI.LinkForPage
         page={page} current={current}
-        href={"?" + queryString.stringify({ ...query, page })}
+        href={"?" + stringify({ ...query, page })}
         onClick={navigate}
       />;
     }}

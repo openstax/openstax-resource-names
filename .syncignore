@@ -4,3 +4,5 @@ example/*
 packages/utils/*
 .claude/skills/*
 scripts/audit-downstream-sync.bash
+packages/info/*
+.github/workflows/publish-info.yml

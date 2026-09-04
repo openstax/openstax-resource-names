@@ -1,4 +1,4 @@
-import queryString from 'query-string';
+import { stringify } from '@openstax/ts-utils/misc/queryString';
 import type { AnyOrnLocateResponse, SearchResponse } from './resolve';
 import { acceptResponse } from './utils/acceptResponse';
 
@@ -18,7 +18,7 @@ export const locateAll = async(orn: string[]): Promise<AnyOrnLocateResponse[]> =
   if (orn.length === 0) {
     return Promise.resolve([]);
   }
-  return fetch(locateHost + '/api/v0/orn-lookup?' + queryString.stringify({orn}))
+  return fetch(locateHost + '/api/v0/orn-lookup?' + stringify({orn}))
     .then(response => acceptResponse(response))
     .then(response => response.json() as any)
     .then(response => response.items)
@@ -26,7 +26,7 @@ export const locateAll = async(orn: string[]): Promise<AnyOrnLocateResponse[]> =
 };
 
 export const search = async(query: string, limit: number = 5, filters: {[key: string]: string | string[]} = {}): Promise<SearchResponse> => {
-  return fetch(locateHost + '/api/v0/search?' + queryString.stringify({query, limit, ...filters}))
+  return fetch(locateHost + '/api/v0/search?' + stringify({query, limit, ...filters}))
     .then(response => acceptResponse(response))
     .then(response => response.json() as any)
   ;

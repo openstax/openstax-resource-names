@@ -34,7 +34,7 @@ if [ -z "$pagerDutyAnytimeEndpoint" ] || [ -z "$pagerDutyWorkdayEndpoint" ]; the
   echo "Warning: PagerDuty endpoint(s) not set. You can set them by running: 'npx ts-utils upload-pager-duty-endpoints'" > /dev/stderr
 fi
 
-npm install
+npm ci
 
 if [ -n "$(git status --porcelain=v1 2>/dev/null)" ]; then
   echo "please stash, commit, gitignore, or reset your changes before deploying" > /dev/stderr

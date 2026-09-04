@@ -1,0 +1,255 @@
+name: template sync ticket
+
+# Files a Jira ticket when this project has drifted from the service template
+# and nobody is already fixing it.
+#
+# This workflow ships in openstax/typescript-service-template and only does
+# anything once it has been synced into a downstream project -- the job is
+# skipped on the template itself, which has nothing to sync from.
+#
+# Drift is measured against the commit list published in
+# @openstax/typescript-service-template-info, so this needs no access to the
+# (private) template repo -- only the `packages: read` that installing
+# @openstax/ts-utils already requires.
+#
+# Configure per project via the `env` block on the job:
+#   JIRA_COMPONENT       the CORE component the ticket files under (required
+#                        field on that board, same value as `jira-components`
+#                        in sbom.yml)
+#   MIN_COMMITS_BEHIND   how far behind the template is worth a ticket
+#   MIN_DAYS_SINCE_SYNC  how old the pinned template commit has to be as well;
+#                        both thresholds must be met, so neither a single stale
+#                        commit nor a flurry of fresh ones triggers a ticket
+#
+# Tickets are labelled `template-sync` plus the repo name, which is what makes
+# them findable: an already open one for this project suppresses another, and
+# the pair also gives a single JQL view of the whole fleet's sync tickets.
+#
+# Requires the JIRA_EMAIL / JIRA_TOKEN secrets that ci.yml already uses.
+
+on:
+  schedule:
+    # monday mornings. the ticket is assigned to a bot that opens a PR within
+    # minutes, and an open sync PR suppresses the next run, so this only fires
+    # again for projects where the previous ticket went unworked.
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  packages: read
+
+jobs:
+  file_ticket:
+    name: file ticket
+    # the template is the source of the sync, never a target of one
+    if: github.repository != 'openstax/typescript-service-template'
+    runs-on: ubuntu-latest
+    env:
+      JIRA_SITE: https://openstax.atlassian.net
+      JIRA_PROJECT: CORE
+      # downstream projects: replace with your team's CORE component
+      JIRA_COMPONENT: Shared Services
+      # OpenStaxClaude -- picks the ticket up on assignment
+      JIRA_ASSIGNEE_ACCOUNT_ID: "712020:26e8a8ed-047b-4779-9ca7-aa11e8cf806e"
+      # identifies this workflow's tickets; the repo name scopes them to one
+      # project, since Jira has no field for that
+      JIRA_SYNC_LABEL: template-sync
+      JIRA_REPO_LABEL: ${{ github.event.repository.name }}
+      MIN_COMMITS_BEHIND: 1
+      MIN_DAYS_SINCE_SYNC: 7
+    steps:
+      # `.lastsync` is read from the checkout; both tools below come from the
+      # registry, so there is no install step to wait on
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: echo '//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}' >> ~/.npmrc
+
+      # someone (or something) is already on it -- an open PR that touches
+      # `.lastsync` is a sync in flight
+      - name: check for an open sync PR
+        id: open_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          prs="$(npx --yes --package=@openstax/ts-utils@latest \
+            ts-utils list-sync-prs "$GITHUB_REPOSITORY")"
+          if [ -n "$prs" ]; then
+            echo "sync already in flight:"
+            echo "$prs"
+            echo "in_flight=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no open PR touches .lastsync"
+            echo "in_flight=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: measure drift from the template
+        id: drift
+        if: steps.open_pr.outputs.in_flight == 'false'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          info="$(npx --yes @openstax/typescript-service-template-info@latest --json)"
+          echo "$info"
+
+          status="$(printf '%s' "$info" | jq -r '.status')"
+          behind="$(printf '%s' "$info" | jq -r '.behind // 0')"
+          days="$(printf '%s' "$info" | jq -r '.daysBehind // 0')"
+          {
+            echo "status=$status"
+            echo "behind=$behind"
+            echo "days=$days"
+            echo "synced=$(printf '%s' "$info" | jq -r '.synced.date // "" | .[0:10]')"
+          } >> "$GITHUB_OUTPUT"
+
+          case "$status" in
+            current)
+              echo "already at the template head"
+              echo "file=false" >> "$GITHUB_OUTPUT"
+              ;;
+            behind)
+              if [ "$behind" -ge "$MIN_COMMITS_BEHIND" ] && [ "$days" -ge "$MIN_DAYS_SINCE_SYNC" ]; then
+                echo "$behind commits behind, pinned commit is $days days old"
+                echo "file=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "$behind commits behind, pinned commit is $days days old -- under the thresholds ($MIN_COMMITS_BEHIND commits and $MIN_DAYS_SINCE_SYNC days)"
+                echo "file=false" >> "$GITHUB_OUTPUT"
+              fi
+              ;;
+            *)
+              # never-synced or unknown-sha: the drift cannot be measured, which
+              # is itself worth a ticket rather than silence
+              echo "status is $status -- filing"
+              echo "file=true" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      # an open ticket means the reminder already landed and nobody has acted on
+      # it -- filing another every monday would only bury it. closing the ticket
+      # re-arms this deliberately: if the drift is still there, the nag returns.
+      - name: check for an open ticket
+        id: existing
+        if: steps.drift.outputs.file == 'true'
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          jql="project = $JIRA_PROJECT"
+          jql="$jql AND labels = \"$JIRA_SYNC_LABEL\""
+          jql="$jql AND labels = \"$JIRA_REPO_LABEL\""
+          jql="$jql AND resolution = EMPTY"
+          echo "$jql"
+
+          # --data-urlencode with --get does the encoding, no jq @uri needed.
+          # kept off a pipeline on purpose: actions runs `bash -e` without
+          # pipefail, so `curl | jq` would report jq's status and a failed
+          # search would read as "nothing open".
+          if ! response="$(curl -sS --fail-with-body \
+            -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+            -H 'Accept: application/json' \
+            --get "$JIRA_SITE/rest/api/3/search/jql" \
+            --data-urlencode "jql=$jql" \
+            --data-urlencode "fields=key" \
+            --data-urlencode "maxResults=5")"; then
+            echo "::warning::jira search failed -- filing anyway, since a duplicate ticket is easier to notice than a missing one"
+            echo "open=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          found="$(printf '%s' "$response" | jq -r '.issues[].key')"
+
+          if [ -n "$found" ]; then
+            echo "already open: $(printf '%s' "$found" | tr '\n' ' ')"
+            echo "open=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no open $JIRA_SYNC_LABEL ticket for $JIRA_REPO_LABEL"
+            echo "open=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: file the jira ticket
+        if: steps.existing.outputs.open == 'false'
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          DRIFT_STATUS: ${{ steps.drift.outputs.status }}
+          BEHIND: ${{ steps.drift.outputs.behind }}
+          SYNC_AGE: ${{ steps.drift.outputs.days }}
+          SYNCED_ON: ${{ steps.drift.outputs.synced }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$JIRA_ASSIGNEE_ACCOUNT_ID" ]; then
+            echo "::error::JIRA_ASSIGNEE_ACCOUNT_ID is unset -- an unassigned ticket would never get picked up"
+            exit 1
+          fi
+
+          case "$DRIFT_STATUS" in
+            never-synced)
+              drift="There is no record of a previous sync." ;;
+            unknown-sha)
+              drift="Its .lastsync is not on the template's main line, so the drift could not be measured." ;;
+            *)
+              drift="It is $BEHIND commits behind, last synced $SYNCED_ON ($SYNC_AGE days ago)." ;;
+          esac
+
+          # build with jq rather than a heredoc so repo/component names cannot
+          # break the JSON
+          payload="$(jq -n \
+            --arg project "$JIRA_PROJECT" \
+            --arg component "$JIRA_COMPONENT" \
+            --arg sync_label "$JIRA_SYNC_LABEL" \
+            --arg repo_label "$JIRA_REPO_LABEL" \
+            --arg assignee "$JIRA_ASSIGNEE_ACCOUNT_ID" \
+            --arg summary "sync service template in $GITHUB_REPOSITORY" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg drift "$drift" \
+            --arg run_url "$RUN_URL" \
+            '{
+              fields: {
+                project: { key: $project },
+                issuetype: { name: "Task" },
+                components: [ { name: $component } ],
+                labels: [ "maintenance", $sync_label, $repo_label ],
+                assignee: { accountId: $assignee },
+                summary: $summary,
+                description: {
+                  type: "doc",
+                  version: 1,
+                  content: [
+                    { type: "paragraph", content: [ { type: "text", text: (
+                      $repo + " has drifted from the service template. " + $drift +
+                      " No open pull request updates .lastsync, so no sync is in flight."
+                    ) } ] },
+                    { type: "paragraph", content: [
+                      { type: "text", text: "Goal: bring the project up to date with openstax/typescript-service-template, following the sync instructions in the " },
+                      { type: "text", text: "tst-manual", marks: [ { type: "code" } ] },
+                      { type: "text", text: " skill." }
+                    ] },
+                    { type: "paragraph", content: [ { type: "text", text:
+                      "Done when a PR updating .lastsync is merged, or the sync is confirmed unnecessary and this ticket is closed."
+                    } ] },
+                    { type: "paragraph", content: [
+                      { type: "text", text: "Filed automatically by the template sync ticket workflow (" },
+                      { type: "text", text: "run", marks: [ { type: "link", attrs: { href: $run_url } } ] },
+                      { type: "text", text: ")." }
+                    ] }
+                  ]
+                }
+              }
+            }')"
+
+          created="$(curl -sS --fail-with-body \
+            -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -X POST "$JIRA_SITE/rest/api/3/issue" \
+            -d "$payload")"
+
+          key="$(printf '%s' "$created" | jq -r '.key')"
+          echo "created $JIRA_SITE/browse/$key"
+          echo "### Filed [$key]($JIRA_SITE/browse/$key)" >> "$GITHUB_STEP_SUMMARY"

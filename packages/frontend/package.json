@@ -2,8 +2,8 @@
   "name": "@project/frontend",
   "version": "0.1.0",
   "dependencies": {
-    "@openstax/orn-locator": "^1.5.0",
-    "@openstax/ts-utils": "1.50.2",
+    "@openstax/orn-locator": "1.5.2",
+    "@openstax/ts-utils": "1.51.0",
     "@openstax/ui-components": "^1.23.2",
     "@testing-library/jest-dom": "^6.4.7",
     "@testing-library/react": "^16.3.2",
@@ -19,17 +19,17 @@
     "typescript": "5.9.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^10.0.1",
     "@project/lambdas": "1.0.0",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.1.5",
     "cspell": "^10.0.0",
-    "eslint": "^9.39.1",
+    "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "jsdom": "^26.1.0",
-    "npm-run-all": "^4.1.5",
+    "npm-run-all2": "^9.0.2",
     "typescript-eslint": "^8.48.0",
     "vite": "^8.0.16",
     "vitest": "^4.1.5"

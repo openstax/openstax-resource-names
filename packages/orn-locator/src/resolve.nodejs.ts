@@ -3,9 +3,9 @@
 import * as domutils from 'domutils';
 import {parseDocument} from 'htmlparser2';
 
-declare let globalThis: any;
+const globals = globalThis as any;
 
-globalThis.parseDocument = parseDocument;
-globalThis.domutils = domutils;
+globals.parseDocument = parseDocument;
+globals.domutils = domutils;
 
 export * from './resolve';

@@ -4,10 +4,10 @@ import url from 'url';
 import { getKeyValue } from '@openstax/ts-utils';
 import { assertString } from '@openstax/ts-utils/assertions';
 import { ifDefined } from '@openstax/ts-utils/guards';
+import { parse } from '@openstax/ts-utils/misc/queryString';
 import { subrequestAuthProvider } from '@openstax/ts-utils/services/authProvider/subrequest';
 import { localFileServer } from '@openstax/ts-utils/services/fileServer/localFileServer';
 import fetch from 'node-fetch';
-import queryString from 'query-string';
 import { createSearchContentClient } from '../../../services/searchClient/searchContentClient';
 import { composeResponseMiddleware, getRequestResponder, slowResponseMiddleware } from '../core/request';
 import { ApiRouteRequest } from '../core/types';
@@ -39,7 +39,7 @@ export const handler = (request: IncomingMessage & {body?: Buffer}, response: Se
     // APIGatewayProxyEventV2 no longer has multiValueQueryStringParameters, instead it joins multiple values on comma
     queryStringParameters: search
       ? Object.fromEntries(
-        Object.entries(queryString.parse(search)).map(([key, entry]) => [key, entry instanceof Array ? entry.join(',') : entry])
+        Object.entries(parse(search)).map(([key, entry]) => [key, Array.isArray(entry) ? entry.join(',') : entry])
       )
       : undefined,
     requestContext: {

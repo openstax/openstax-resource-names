@@ -1,10 +1,17 @@
 {
   "semverGroups": [
     {
+      "label": "orn-locator is published: consumers need to be able to dedupe ts-utils",
+      "packages": ["@openstax/orn-locator"],
+      "dependencyTypes": ["prod"],
+      "dependencies": ["@openstax/ts-utils"],
+      "range": "^"
+    },
+    {
       "label": "use exact versions",
       "packages": ["**"],
       "dependencyTypes": ["**"],
-      "dependencies": ["@openstax/orn", "@openstax/ts-utils", "typescript", "@project/*"],
+      "dependencies": ["@openstax/orn-locator", "@openstax/ts-utils", "typescript", "@project/*"],
       "range": ""
     },
     {
