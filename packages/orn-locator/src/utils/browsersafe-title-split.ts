@@ -4,6 +4,11 @@ declare let window: any | undefined;
 
 const clean = (str: string) => str.replace(/\s+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
 
+// domutils gives element nodes an attribs object but no class key when the
+// attribute is absent, and a raw substring match would treat os-numbered as
+// os-number. matching the tokens keeps this in step with querySelector below.
+const hasClass = (node: any, name: string) => (node.attribs?.class ?? '').split(/\s+/).includes(name);
+
 export type TitleParts = {html: string; title: string; numberText: string | null;  number: string | null; shortTitle: string | null};
 
 export const titleSplit = (html: string) => {
@@ -12,11 +17,11 @@ export const titleSplit = (html: string) => {
     const globals = globalThis as any;
     const titleDoc = globals.parseDocument(html);
 
-    const numberElement = globals.domutils.findOne((node: any) => node.attribs.class.includes('os-number'), titleDoc.children);
-    const numberWithoutText = numberElement?.children.filter((node: any) => !node.attribs?.class.includes('os-part-text'));
+    const numberElement = globals.domutils.findOne((node: any) => hasClass(node, 'os-number'), titleDoc.children);
+    const numberWithoutText = numberElement?.children.filter((node: any) => !hasClass(node, 'os-part-text'));
     const justTheNumber = numberWithoutText && numberWithoutText.length > 0 && globals.domutils.textContent(numberWithoutText);
     const numberTextPart = numberElement && globals.domutils.textContent(numberElement);
-    const shortTitleElement = globals.domutils.findOne((node: any) => node.attribs.class === 'os-text', titleDoc.children);
+    const shortTitleElement = globals.domutils.findOne((node: any) => hasClass(node, 'os-text'), titleDoc.children);
     const shortTitle = shortTitleElement && globals.domutils.textContent(shortTitleElement);
     return {
       html,
