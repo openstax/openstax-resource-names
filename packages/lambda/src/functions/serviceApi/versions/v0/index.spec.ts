@@ -120,8 +120,10 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "data": "<html><head>
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
@@ -161,16 +163,12 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
-        <script>
-          window._OX_AUTH_TOKEN = 'authToken';
-          window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};
-        </script>
+      <script>window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};</script>
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "data": "<html><head>
-        <script>
-          window._OX_AUTH_TOKEN = 'authToken';
-          window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};
-        </script>
+      <script>window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};</script>
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
@@ -207,8 +205,10 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
   "data": "<html><head>
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
@@ -220,26 +220,52 @@ describe('buildIndex', () => {
   });
 });
 
-describe('makeIndexHtmlBody', () => {
+describe('buildFrontendIndexBody', () => {
   it('matches snapshot with maintenance message', async () => {
-    const response = await makeIndexHtmlBody({
-      putFileContent: jest.fn(),
-      getSignedViewerUrl: jest.fn(),
-      getFileContent: async () => Buffer.from(
-        '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
-      )
-    } as unknown as FileServerAdapter, {
-      codeVersion: 'code-version-goes-here',
-      maintenanceMessage: 'Down for maintenance',
-      frontendConfig: {
-        roleApplication: 'test',
-        accountsBase: 'https://dev.openstax.org/accounts',
-      }
-    }
-    );
+    const response = await buildFrontendIndexBody({
+      environmentConfig: {
+        codeVersion: 'code-version-goes-here',
+        maintenanceMessage: 'Down for maintenance',
+        frontendConfig: {
+          roleApplication: 'test',
+          accountsBase: 'https://dev.openstax.org/accounts',
+        },
+      },
+      frontendFileServer: {
+        putFileContent: jest.fn(),
+        getSignedViewerUrl: jest.fn(),
+        getFileContent: async () => Buffer.from(
+          '<html><head><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>'
+        )
+      } as unknown as FileServerAdapter,
+      request,
+    }, {global: '_OX_SESSION_CONFIG', value: {disableAnalytics: false}});
     expect(response).toMatchInlineSnapshot(`
 "<html><head>
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
       <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body>Down for maintenance<!-- Static body stuff --></body></html>"
+`);
+  });
+});
+
+describe('apiV0SessionConfig', () => {
+  it('matches snapshot', async() => {
+    const response = await apiV0SessionConfig.handler(undefined, {
+      logger: createConsoleLogger(),
+      request,
+      authProvider: stubAuthProvider(),
+    } as any);
+    expect(response).toMatchInlineSnapshot(`
+{
+  "body": "{"disableAnalytics":false}",
+  "data": {
+    "disableAnalytics": false,
+  },
+  "headers": {
+    "content-type": "application/json",
+  },
+  "statusCode": 200,
+}
 `);
   });
 });
