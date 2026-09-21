@@ -1,4 +1,4 @@
-# spell-checker: ignore Keepalive FDTNDATAQYW
+# spell-checker: ignore Keepalive FDTNDATAQYW fps goog ZJBPQWK countryregion edgelambda
 Metadata:
   cfn-lint:
     config:
@@ -384,6 +384,121 @@ Resources:
         Runtime: cloudfront-js-1.0
       Name: !Sub ${AWS::StackName}-rewriteFunction
 
+  # ==============
+  # GTM Gateway Cache Policies
+  # ==============
+  GtmCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub ${Application}-${EnvName}-gtm-cache-policy
+        Comment: Cache policy for Google Tag Manager gateway
+        DefaultTTL: 86400
+        MaxTTL: 31536000
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          CookiesConfig:
+            CookieBehavior: all
+          HeadersConfig:
+            HeaderBehavior: whitelist
+            Headers:
+              - Host
+              - CloudFront-Viewer-Country
+              - CloudFront-Viewer-Country-Region
+          QueryStringsConfig:
+            QueryStringBehavior: all
+
+  GtmOriginRequestPolicy:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: !Sub ${Application}-${EnvName}-gtm-origin-policy
+        Comment: Origin request policy for Google Tag Manager gateway
+        CookiesConfig:
+          CookieBehavior: all
+        HeadersConfig:
+          HeaderBehavior: whitelist
+          Headers:
+            - Host
+            - CloudFront-Viewer-Country
+            - CloudFront-Viewer-Country-Region
+        QueryStringsConfig:
+          QueryStringBehavior: all
+
+  # ==============
+  # GTM Gateway Lambda@Edge
+  # ==============
+  GtmHeaderTransformRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - edgelambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  GtmHeaderTransformFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${EnvName}-gtm-header-transform
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: !GetAtt GtmHeaderTransformRole.Arn
+      Code:
+        ZipFile: |
+          // edge-version: v1
+          // which container a request is for is decided by which behavior matched it,
+          // so this only has to fix up headers. it must not touch the uri or the query
+          // string - after the loader, everything the container asks for is a path and
+          // a payload under the same prefix.
+          exports.handler = async (event) => {
+            const request = event.Records[0].cf.request;
+            const headers = request.headers;
+
+            // Set Host header to the origin's domain
+            const origin = request.origin.custom;
+            if (origin && origin.domainName) {
+              headers['host'] = [{ key: 'Host', value: origin.domainName }];
+            }
+
+            // Map CloudFront headers to Google's expected headers
+            if (headers['cloudfront-viewer-country']) {
+              const country = headers['cloudfront-viewer-country'][0].value;
+              headers['x-forwarded-country'] = [{ key: 'X-Forwarded-Country', value: country }];
+
+              // If we also have region, create the combined CountryRegion header (preferred by Google)
+              if (headers['cloudfront-viewer-country-region']) {
+                const region = headers['cloudfront-viewer-country-region'][0].value;
+                headers['x-forwarded-region'] = [{ key: 'X-Forwarded-Region', value: region }];
+                headers['x-forwarded-countryregion'] = [{ key: 'X-Forwarded-CountryRegion', value: `${country}-${region}` }];
+              }
+            }
+
+            return request;
+          };
+      Description: Translates CloudFront geo headers to Google Tag Manager expected format
+
+  # cloudfront only picks up a new lambda@edge version when this resource's own
+  # properties change - editing the function's code above does not do it. but lambda
+  # also refuses to publish when the code is unchanged, so a description that moves on
+  # its own fails the deploy. the marker below therefore has a twin in the edge-version
+  # comment at the top of the code above: bump both, in the same edit, every time that
+  # code changes. bumping the code comment is what makes the new sha lambda needs to
+  # publish, and bumping this is what makes cloudfront pick the publish up.
+  GtmHeaderTransformVersion:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref GtmHeaderTransformFunction
+      Description: edge-version v1
+
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -533,6 +648,33 @@ Resources:
               QueryString: 'false'
             ViewerProtocolPolicy: redirect-to-https
 
+          # the fps.goog origin serves whatever path it is asked for, so the prefix is
+          # ours to name, but it has to stay put once live - the container builds every
+          # later request relative to where its loader came from, so moving the prefix
+          # orphans everything downstream of it
+          - PathPattern: /gtm/*
+            TargetOriginId: GtmOrigin
+            ViewerProtocolPolicy: https-only
+            # collection beacons post, and cloudfront only offers GET/HEAD, +OPTIONS,
+            # or all seven - there is no narrower set that includes POST
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            CachePolicyId: !Ref GtmCachePolicy
+            OriginRequestPolicyId: !Ref GtmOriginRequestPolicy
+            LambdaFunctionAssociations:
+              - EventType: origin-request
+                LambdaFunctionARN: !Ref GtmHeaderTransformVersion
+
         # This cache behavior always serves /build/index.html
         DefaultCacheBehavior:
           TargetOriginId: ApiOrigin
@@ -598,6 +740,15 @@ Resources:
               OriginKeepaliveTimeout: 5
               OriginReadTimeout: 60
               OriginProtocolPolicy: http-only
+
+          # first party mode serves each container from <tagging id>.fps.goog
+          - Id: GtmOrigin
+            DomainName: GTM-5ZJBPQWK.fps.goog
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1.2
 
         OriginGroups:
           Quantity: 2

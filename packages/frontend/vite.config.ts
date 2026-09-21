@@ -14,9 +14,28 @@ function lambdaProxyPlugin(): Plugin {
   };
 }
 
+/*
+ * deployed, /gtm/* is a cloudfront behavior pointed at the first party gtm origin -
+ * see deploy/deployment.cfn.yml. vite has no equivalent, so serve an empty script
+ * here. that keeps the loader in src/index.tsx on a single code path rather than
+ * branching on the environment, and keeps the dev console clean.
+ */
+function gtmStubPlugin(): Plugin {
+  return {
+    name: 'gtm-dev-stub',
+    configureServer(server) {
+      server.middlewares.use('/gtm', (_req, res) => {
+        res.setHeader('content-type', 'application/javascript');
+        res.end('');
+      });
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     react(),
+    gtmStubPlugin(),
     lambdaProxyPlugin(),
   ],
 

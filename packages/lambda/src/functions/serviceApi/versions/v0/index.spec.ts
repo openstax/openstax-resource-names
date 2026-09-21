@@ -3,7 +3,7 @@ import { stubAuthProvider, User } from '@openstax/ts-utils/services/authProvider
 import { FileServerAdapter } from '@openstax/ts-utils/services/fileServer';
 import { createConsoleLogger } from '@openstax/ts-utils/services/logger/console';
 import { ApiRouteRequest, AppServices } from '../../core';
-import { apiV0Index, apiV0Routes, buildIndex, makeIndexHtmlBody } from '.';
+import { apiV0Index, apiV0Routes, apiV0SessionConfig, buildFrontendIndexBody, buildIndex } from '.';
 
 let appServices: AppServices;
 let request: ApiRouteRequest;
