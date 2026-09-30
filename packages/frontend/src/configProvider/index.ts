@@ -3,19 +3,19 @@ import type {
   FrontendConfigProvider as LambdaFrontendConfigProvider
 } from '@project/lambdas/build/src/functions/serviceApi/versions/v0';
 import { once } from '@openstax/ts-utils';
-import { assertDefined } from '@openstax/ts-utils/assertions';
 import { ConfigForConfigProvider } from '@openstax/ts-utils/config';
 import type { createApiGateway } from '@openstax/ts-utils/services/apiGateway';
 import routes from '@project/lambdas/build/routeData.json';
+import { config } from '../api';
 
 export type FrontendConfig = ConfigForConfigProvider<LambdaFrontendConfigProvider>;
 
-const config = {
-  apiBase: () => import.meta.env.PROD
-    ? assertDefined(import.meta.env.VITE_API_BASE_URL, 'VITE_API_BASE_URL must be provided in production')
-    : '/'
-};
-
+/*
+ * deliberately a second gateway, and deliberately unauthenticated - note the missing
+ * third argument. the authProvider needs the configProvider (for accountsBase), so a
+ * configProvider built on the authenticated client would be a cycle. these two are
+ * the only api clients the app needs; everything else uses services.apiClient.
+ */
 const getApiGateway = (makeApiGateway: ReturnType<typeof createApiGateway>) => {
   return makeApiGateway<ApiRoutes>(config, routes);
 };

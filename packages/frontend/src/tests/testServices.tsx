@@ -9,11 +9,15 @@ export const testApiGateway: {[key: string]: any} = {};
 
 const authProvider = stubAuthProvider();
 export const testServices = {
-  createApiGateway: () => testApiGateway,
+  apiClient: testApiGateway,
   history: createMemoryHistory(),
   authProvider,
   roleValidator: createUserRoleValidator(authProvider, {application: 'test'}),
-  configProvider: { getConfig: async() => {}, getValue: async(_name: string) => undefined }
+  configProvider: { getConfig: async() => {}, getValue: async(_name: string) => undefined },
+  sessionConfigProvider: {
+    getConfig: async() => ({disableAnalytics: false}),
+    getValue: async(_name: string) => undefined,
+  }
 } as any as AppServices;
 
 export const TestServiceProvider = ({children, ...services}: React.PropsWithChildren<Partial<AppServices>>) =>

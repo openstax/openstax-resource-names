@@ -2,7 +2,7 @@ import { FetchState, fetchSuccess, stateHasData, fetchIdle } from "@openstax/ts-
 import styled from "styled-components";
 import type {SearchResponse} from '@openstax/orn-locator';
 import React from 'react';
-import { useApiClient } from "./api";
+import { useApiClient } from "../api";
 import { createRoute, makeScreen } from "../core/services";
 import * as UI from '@openstax/ui-components';
 

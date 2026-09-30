@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- spell-checker: ignore TFCS -->
     <meta charset="utf-8" />
     <title>OpenStax</title>
     <meta name="robots" content="noindex" />
@@ -15,6 +14,12 @@
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
 
+    <!--
+      Any external scripts must be placed in GTM, which src/index.tsx loads first
+      party once it knows the session. That includes CookieYes, and the banner
+      reconciliation that used to live here - GTM reads the consent preferences off
+      window._OX_USER_DATA, which the buildIndex route writes above this script.
+    -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
@@ -38,55 +43,9 @@
         'os.app':'%VITE_APP_NAME%',
         'os.user':window._OX_USER_DATA,
       });
-
-      document.addEventListener('cookieyes_banner_load', (eventData) => {
-        const consentPreferences = window._OX_USER_DATA?.consentPreferences;
-        if (consentPreferences) {
-          // Accounts remembers some state
-          // We always defer to Accounts in this case
-
-          // Only call the CookieYes API if it doesn't match what's in Accounts
-          let doUpdate = !eventData.detail.isUserActionCompleted;
-
-          consentPreferences.accepted?.forEach((accepted) => {
-            // There is no "necessary" switch
-            if (accepted !== 'necessary') {
-              const switchElem = document.getElementById(`ckySwitch${accepted}`);
-              if (switchElem) {
-                switchElem.checked = true;
-                if (!eventData.detail.categories[accepted]) { doUpdate = true; }
-              }
-            }
-          });
-          consentPreferences.rejected?.forEach((rejected) => {
-            const switchElem = document.getElementById(`ckySwitch${rejected}`);
-            if (switchElem) {
-              switchElem.checked = false;
-              if (eventData.detail.categories[rejected]) { doUpdate = true; }
-            }
-          });
-          if (doUpdate) { performBannerAction('accept_partial'); }
-        }
-      });
     </script>
-
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-W6N7PB');</script>
-    <!-- End Google Tag Manager -->
-    <!-- Start cookieyes banner -->
-    <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/7c03144a7ef8b7f646f1ce01/script.js"></script>
-    <!-- End cookieyes banner -->
-    <!-- Any new scripts must be placed after this point -->
   </head>
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TFCS56G"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <main id="root"></main>
     <script type="module" src="/src/index.tsx"></script>
