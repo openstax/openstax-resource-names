@@ -44,6 +44,11 @@ const getReleaseId = async () => {
   return releaseJson.id;
 };
 
+// `removed` and osweb's 'retired' book_state mean different things. a book that is 'retired' on osweb
+// has been superseded (e.g. by a newer edition) but can still be served by REX. a book is removed when
+// release.json marks it `retired: true`: REX no longer serves it and it is left out of the library.
+const isRemoved = (releaseJson: any, bookId: string) => releaseJson.books[bookId]?.retired === true;
+
 const getReleaseBookIds = async () => {
   const releaseJson = await getReleaseJson();
   return Object.entries(releaseJson.books)
@@ -140,6 +145,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
   ;
 
   const {archiveVersion, bookVersion, data: archiveData} = await archiveBook(id, version, archive);
+  const releaseJson = await getReleaseJson();
   const default_page_slug = oswebData.webview_rex_link.match(/\/books\/.*\/pages\/(.*)$/)?.[1] as string;
   const default_page = default_page_slug && findTreeNodeBySlug(default_page_slug, archiveData.tree);
 
@@ -162,6 +168,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
       versionedOrn: `https://openstax.org/orn/book/${id}@${bookVersion}:${archiveVersion}`,
       type: 'book' as const,
       state: oswebData.book_state as string,
+      removed: isRemoved(releaseJson, id),
       title: oswebData.title as string,
       subjects: subjects as BookSubject[],
       categories: categories as BookCategory[],
@@ -456,9 +463,14 @@ export const bookSearch = async(
   searchClient: SearchClient, query: string, limit: number, searchStrategy = 's1'
 ): Promise<BookDetail[]> => {
   const releaseId = await getReleaseId();
+  const releaseJson = await getReleaseJson();
   const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i2', searchStrategy);
 
-  return results.map(result => assertBookDetail(result.source));
+  // cached documents may predate the removed field, so it's always set from the current release
+  return results.map(result => {
+    const detail = assertBookDetail(result.source);
+    return {...detail, removed: isRemoved(releaseJson, detail.id)};
+  });
 };
 
 export const pageSearch = async(
