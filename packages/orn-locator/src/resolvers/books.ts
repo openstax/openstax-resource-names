@@ -44,8 +44,10 @@ const getReleaseId = async () => {
   return releaseJson.id;
 };
 
-// osweb's book_state isn't reliable for this: older editions can be 'retired' there and still live in REX
-const isRetired = (releaseJson: any, bookId: string) => releaseJson.books[bookId]?.retired === true;
+// `removed` and osweb's 'retired' book_state mean different things. a book that is 'retired' on osweb
+// has been superseded (e.g. by a newer edition) but can still be served by REX. a book is removed when
+// release.json marks it `retired: true`: REX no longer serves it and it is left out of the library.
+const isRemoved = (releaseJson: any, bookId: string) => releaseJson.books[bookId]?.retired === true;
 
 const getReleaseBookIds = async () => {
   const releaseJson = await getReleaseJson();
@@ -166,7 +168,7 @@ const commonBook = memoize(async(id: string, version?: string, archive?: string)
       versionedOrn: `https://openstax.org/orn/book/${id}@${bookVersion}:${archiveVersion}`,
       type: 'book' as const,
       state: oswebData.book_state as string,
-      retired: isRetired(releaseJson, id),
+      removed: isRemoved(releaseJson, id),
       title: oswebData.title as string,
       subjects: subjects as BookSubject[],
       categories: categories as BookCategory[],
@@ -464,10 +466,10 @@ export const bookSearch = async(
   const releaseJson = await getReleaseJson();
   const results = await doOpenSearch(searchClient, limit, query, [releaseId], 'i2', searchStrategy);
 
-  // cached documents may predate the retired field, so it's always set from the current release
+  // cached documents may predate the removed field, so it's always set from the current release
   return results.map(result => {
     const detail = assertBookDetail(result.source);
-    return {...detail, retired: isRetired(releaseJson, detail.id)};
+    return {...detail, removed: isRemoved(releaseJson, detail.id)};
   });
 };
 

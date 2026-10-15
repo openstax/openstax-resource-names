@@ -6,8 +6,8 @@ const releaseJson = {
   archiveUrl: '/apps/archive/20240101.000000',
   books: {
     'live-book': { defaultVersion: 'abc123' },
-    // retired in REX even though osweb may say otherwise, and vice versa
-    'retired-book': { defaultVersion: 'def456', retired: true },
+    // release.json's `retired` flag is what marks a book as removed
+    'removed-book': { defaultVersion: 'def456', retired: true },
   },
 };
 
@@ -36,7 +36,7 @@ beforeAll(() => {
     const body = url.endsWith('/rex/release.json')
       ? releaseJson
       : url.includes('/apps/cms/api/v2/pages')
-        // osweb marks the live REX book as retired to show that its state is ignored
+        // osweb marks every book as retired to show that its state doesn't affect `removed`
         ? { items: [oswebBook(new URL(url).searchParams.get('cnx_id')!, 'retired')] }
         : archiveBook;
 
@@ -49,14 +49,14 @@ afterAll(() => {
 });
 
 describe('book', () => {
-  it('is not retired when release.json does not retire it, regardless of osweb state', async() => {
+  it('is not removed when release.json does not retire it, even if osweb says retired', async() => {
     const result = await book('live-book');
     expect(result.state).toBe('retired');
-    expect(result.retired).toBe(false);
+    expect(result.removed).toBe(false);
   });
 
-  it('is retired when release.json retires it', async() => {
-    expect((await book('retired-book')).retired).toBe(true);
+  it('is removed when release.json retires it', async() => {
+    expect((await book('removed-book')).removed).toBe(true);
   });
 });
 
@@ -67,13 +67,13 @@ describe('bookSearch', () => {
     }),
   } as unknown as SearchClient);
 
-  it('sets retired on cached results from the current release', async() => {
-    const results = await bookSearch(searchClient(['live-book', 'retired-book', 'unknown-book']), 'query', 5);
+  it('sets removed on cached results from the current release', async() => {
+    const results = await bookSearch(searchClient(['live-book', 'removed-book', 'unknown-book']), 'query', 5);
 
-    expect(results.map(({ id, retired }) => ({ id, retired }))).toEqual([
-      { id: 'live-book', retired: false },
-      { id: 'retired-book', retired: true },
-      { id: 'unknown-book', retired: false },
+    expect(results.map(({ id, removed }) => ({ id, removed }))).toEqual([
+      { id: 'live-book', removed: false },
+      { id: 'removed-book', removed: true },
+      { id: 'unknown-book', removed: false },
     ]);
   });
 });
