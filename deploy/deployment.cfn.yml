@@ -430,6 +430,9 @@ Resources:
   # ==============
   # GTM Gateway Lambda@Edge
   # ==============
+  # No logs permissions on purpose. Lambda@Edge creates a log group in every
+  # region it runs in, with no retention, and this function only produces
+  # START/END/REPORT lines.
   GtmHeaderTransformRole:
     Type: AWS::IAM::Role
     Properties:
@@ -442,8 +445,6 @@ Resources:
                 - lambda.amazonaws.com
                 - edgelambda.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   GtmHeaderTransformFunction:
     Type: AWS::Lambda::Function

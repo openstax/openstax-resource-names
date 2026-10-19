@@ -6,6 +6,7 @@ import { createSlowResponseMiddleware } from '@openstax/ts-utils/middleware/apiS
 import { createThrowNotFoundMiddleware } from '@openstax/ts-utils/middleware/throwNotFoundMiddleware';
 import { makeGetRequestResponder, METHOD } from '@openstax/ts-utils/routing';
 import { lambdaBatchRequestHandler } from '@openstax/ts-utils/routing/lambdaBatchRequestHandler';
+import { redactLogFields } from '@openstax/ts-utils/services/logger';
 import { apiRoutes, TRoutes } from './routes';
 import { ApiRouteRequest, ApiRouteResponse, AppServices } from './types';
 
@@ -24,7 +25,7 @@ export const logExtractor = (request: ApiRouteRequest) => {
   const { queryStringParameters, requestContext } = request;
   return {
     http: requestContext.http,
-    query: queryStringParameters,
+    query: redactLogFields(queryStringParameters),
     requestId: request.headers?.['x-request-id'],
   };
 };

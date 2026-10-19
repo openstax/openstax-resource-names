@@ -25,7 +25,7 @@ name: template sync ticket
 # them findable: an already open one for this project suppresses another, and
 # the pair also gives a single JQL view of the whole fleet's sync tickets.
 #
-# Requires the JIRA_EMAIL / JIRA_TOKEN secrets that ci.yml already uses.
+# Requires the JIRA_EMAIL / JIRA_TOKEN secrets that jira.yml already uses.
 
 on:
   schedule:
