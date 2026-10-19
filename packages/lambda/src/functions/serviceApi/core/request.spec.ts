@@ -20,6 +20,12 @@ describe('logExtractor', () => {
       { queryStringParameters: {}, requestContext: { http: { path: '/asdf/foo' } }, headers: {} } as unknown as ApiRouteRequest
     )).toEqual({http: { path: '/asdf/foo' }, query: {}, requestId: undefined});
   });
+
+  it('redacts sensitive query parameters', () => {
+    expect(logExtractor(
+      { queryStringParameters: { t: 'jwt', courseId: 'abc' }, requestContext: { http: { path: '/asdf/foo' } } } as unknown as ApiRouteRequest
+    )).toEqual({http: { path: '/asdf/foo' }, query: { t: '[redacted]', courseId: 'abc' }, requestId: undefined});
+  });
 });
 
 describe('pathExtractor', () => {

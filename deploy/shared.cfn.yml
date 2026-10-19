@@ -25,9 +25,14 @@ Resources:
         Status: Enabled
       LifecycleConfiguration:
         Rules:
-          - Id: auto-delete
+          - Id: trim-old-versions
             Status: Enabled
-            ExpirationInDays: 30
+            NoncurrentVersionExpirationInDays: 7
+            ExpiredObjectDeleteMarker: true
+          - Id: auto-delete-lambda-code
+            Status: Enabled
+            Prefix: lambda-code/
+            ExpirationInDays: 90
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced

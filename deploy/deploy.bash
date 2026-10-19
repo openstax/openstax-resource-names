@@ -83,7 +83,7 @@ export APPLICATION;
 
 npm run archive:clean
 
-apiCodeKey="api-$timestamp.zip"
+apiCodeKey="lambda-code/api-$timestamp.zip"
 aws s3 cp "dist/serviceApi.zip" "s3://$codeBucket/$apiCodeKey"
 
 # =======

@@ -3,16 +3,6 @@ name: CI
 on: [pull_request]
 
 jobs:
-  linked_issue:
-    name: Jira
-    runs-on: ubuntu-latest
-    steps:
-    - uses: openstax/jira-linked-action@v0.1.16
-      with:
-        jira_site: openstax
-        jira_project: DISCO
-        jira_email: ${{ secrets.JIRA_EMAIL }}
-        jira_token: ${{ secrets.JIRA_TOKEN }}
   test:
     name: checks
     runs-on: ubuntu-latest
