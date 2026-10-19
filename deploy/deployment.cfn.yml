@@ -113,6 +113,7 @@ Resources:
       Runtime: nodejs24.x
       Environment:
         Variables:
+          PARAMETERS_SECRETS_EXTENSION_LOG_LEVEL: warn
           ANCILLARIES_HOST: !Sub
             - https://${envDomain}${baseDomain}/
             - envDomain: !If [IsProduction, '', !Sub '${EnvName}.']
