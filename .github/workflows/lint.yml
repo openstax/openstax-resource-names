@@ -14,9 +14,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
-          python-version: 3.9
+          python-version: '3.13'
 
       - name: Run pip install
         run: pip install cfn-lint
