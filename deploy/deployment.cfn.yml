@@ -68,6 +68,11 @@ Resources:
   YouAreInTheWrongRegion:
     Type: "AWS::SSM::Parameter"
     Condition: WrongRegion
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W3701 # the empty name is deliberate, it forces the failure
     Properties:
       Name: '' # Leave name empty to force a fail
       Type: String
