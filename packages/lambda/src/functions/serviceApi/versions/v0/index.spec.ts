@@ -257,9 +257,11 @@ describe('apiV0SessionConfig', () => {
     } as any);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"disableAnalytics":false}",
+  "body": "{"disableAnalytics":false,"researchAgreementActive":false}",
   "data": {
     "disableAnalytics": false,
+    "organizationId": undefined,
+    "researchAgreementActive": false,
   },
   "headers": {
     "content-type": "application/json",

@@ -86,6 +86,9 @@ npm run archive:clean
 apiCodeKey="lambda-code/api-$timestamp.zip"
 aws s3 cp "dist/serviceApi.zip" "s3://$codeBucket/$apiCodeKey"
 
+reindexSearchCodeKey="lambda-code/reindex-search-$timestamp.zip"
+aws s3 cp "dist/reindexSearch.zip" "s3://$codeBucket/$reindexSearchCodeKey"
+
 # =======
 # build frontend and upload to static site bucket
 # =======

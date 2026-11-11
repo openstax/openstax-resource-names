@@ -79,6 +79,10 @@ const getHtmlFileContent = async(services: {frontendFileServer: FileServerAdapte
 const resolveSessionConfig = () => ({
   /* stubbed - any user specific values that need to get into the FE can go here. */
   disableAnalytics: false,
+  // when analytics are disabled, a research agreement still allows event capture
+  researchAgreementActive: false,
+  // the school's Salesforce account ID, which analytics record as the organization
+  organizationId: undefined as string | undefined,
 });
 
 export type SessionConfig = ReturnType<typeof resolveSessionConfig>;
