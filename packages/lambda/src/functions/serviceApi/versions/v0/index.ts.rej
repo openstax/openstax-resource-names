@@ -1,0 +1,17 @@
+diff a/packages/lambda/src/functions/serviceApi/versions/v0/index.ts b/packages/lambda/src/functions/serviceApi/versions/v0/index.ts	(rejected hunks)
+@@ -20,6 +20,7 @@ const configProvider = getEnvironmentConfig({
+       roleApplication: roleValidatorConfig.application,
+       accountsBase: envConfig('ACCOUNTS_BASE', 'runtime', '/accounts'),
+       exampleMessage: envConfig('EXAMPLE_MESSAGE', 'runtime', 'hello from /api/v0/info'),
++      ramBase: envConfig('RAM_BASE', 'runtime', 'https://dev.ram.sandbox.openstax.org'),
+     },
+   },
+   deployed: {
+@@ -29,6 +30,7 @@ const configProvider = getEnvironmentConfig({
+       roleApplication: roleValidatorConfig.application,
+       accountsBase: envConfig('ACCOUNTS_BASE', 'runtime'),
+       exampleMessage: envConfig('EXAMPLE_MESSAGE', 'runtime', 'hello from /api/v0/info'),
++      ramBase: envConfig('RAM_BASE', 'runtime'),
+     },
+   },
+ });

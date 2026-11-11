@@ -1,0 +1,22 @@
+diff a/deploy/deployment.cfn.yml b/deploy/deployment.cfn.yml	(rejected hunks)
+@@ -64,6 +68,11 @@ Resources:
+   YouAreInTheWrongRegion:
+     Type: "AWS::SSM::Parameter"
+     Condition: WrongRegion
++    Metadata:
++      cfn-lint:
++        config:
++          ignore_checks:
++            - W3701 # the empty name is deliberate, it forces the failure
+     Properties:
+       Name: '' # Leave name empty to force a fail
+       Type: String
+@@ -150,6 +159,8 @@ Resources:
+           COOKIE_NAME: !Ref CookieName
+           ACCOUNTS_BASE: !Ref AccountsBase
+           SIGNATURE_PUBLIC_KEY: !Ref SignaturePublicKey
++          # where the event capture scripts are loaded from: prod RAM in production, dev RAM everywhere else
++          RAM_BASE: !If [IsProduction, 'https://ram.openstax.org', 'https://dev.ram.sandbox.openstax.org']
+ 
+   apiLambdaUrl:
+     Type: AWS::Lambda::Url

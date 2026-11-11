@@ -1,0 +1,10 @@
+diff a/packages/lambda/package.json b/packages/lambda/package.json	(rejected hunks)
+@@ -2,7 +2,7 @@
+   "name": "@project/lambdas",
+   "version": "1.0.0",
+   "dependencies": {
+-    "@openstax/ts-utils": "1.53.0",
++    "@openstax/ts-utils": "1.57.0",
+     "aws-xray-sdk": "^3.6.0",
+     "node-fetch": "^2.7.0",
+     "path-to-regexp": "^6.2.0",

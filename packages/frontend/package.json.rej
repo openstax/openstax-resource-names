@@ -1,0 +1,12 @@
+diff a/packages/frontend/package.json b/packages/frontend/package.json	(rejected hunks)
+@@ -2,8 +2,8 @@
+   "name": "@project/frontend",
+   "version": "0.1.0",
+   "dependencies": {
+-    "@openstax/ts-utils": "1.53.0",
+-    "@openstax/ui-components": "^1.23.2",
++    "@openstax/ts-utils": "1.57.0",
++    "@openstax/ui-components": "^1.26.4",
+     "@testing-library/jest-dom": "^6.4.7",
+     "@testing-library/react": "^16.3.2",
+     "@testing-library/user-event": "^14.6.1",
