@@ -140,6 +140,8 @@ Resources:
           ACCOUNTS_BASE: !Ref AccountsBase
           SIGNATURE_PUBLIC_KEY: !Ref SignaturePublicKey
           SEARCH_HOST: !Ref SearchHost
+          # where the event capture scripts are loaded from: prod RAM in production, dev RAM everywhere else
+          RAM_BASE: !If [IsProduction, 'https://ram.openstax.org', 'https://dev.ram.sandbox.openstax.org']
 
   apiLambdaUrl:
     Type: AWS::Lambda::Url

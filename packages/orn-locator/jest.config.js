@@ -12,6 +12,5 @@ module.exports = {
     'text-summary',
     'html',
     'lcovonly'
-  ],
-  resolver: './jest.resolver.js'
+  ]
 };

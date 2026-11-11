@@ -19,6 +19,7 @@ const configProvider = getEnvironmentConfig({
     frontendConfig: {
       roleApplication: roleValidatorConfig.application,
       accountsBase: envConfig('ACCOUNTS_BASE', 'runtime', '/accounts'),
+      ramBase: envConfig('RAM_BASE', 'runtime', 'https://dev.ram.sandbox.openstax.org'),
     },
   },
   deployed: {
@@ -27,6 +28,7 @@ const configProvider = getEnvironmentConfig({
     frontendConfig: {
       roleApplication: roleValidatorConfig.application,
       accountsBase: envConfig('ACCOUNTS_BASE', 'runtime'),
+      ramBase: envConfig('RAM_BASE', 'runtime'),
     },
   },
 });
@@ -79,6 +81,10 @@ const getHtmlFileContent = async(services: {frontendFileServer: FileServerAdapte
 const resolveSessionConfig = () => ({
   /* stubbed - any user specific values that need to get into the FE can go here. */
   disableAnalytics: false,
+  // when analytics are disabled, a research agreement still allows event capture
+  researchAgreementActive: false,
+  // the school's Salesforce account ID, which analytics record as the organization
+  organizationId: undefined as string | undefined,
 });
 
 export type SessionConfig = ReturnType<typeof resolveSessionConfig>;

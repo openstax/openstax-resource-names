@@ -3,7 +3,7 @@ import { envConfig } from '@openstax/ts-utils/config';
 import { makeComposeMiddleware } from '@openstax/ts-utils/middleware';
 import { createErrorHandler } from '@openstax/ts-utils/middleware/apiErrorHandler';
 import { createSlowResponseMiddleware } from '@openstax/ts-utils/middleware/apiSlowResponseMiddleware';
-import { createThrowNotFoundMiddleware } from '@openstax/ts-utils/middleware/throwNotFoundMiddleware';
+import { createNotFoundResponseMiddleware } from '@openstax/ts-utils/middleware/notFoundResponseMiddleware';
 import { makeGetRequestResponder, METHOD } from '@openstax/ts-utils/routing';
 import { lambdaBatchRequestHandler } from '@openstax/ts-utils/routing/lambdaBatchRequestHandler';
 import { redactLogFields } from '@openstax/ts-utils/services/logger';
@@ -41,7 +41,7 @@ const batch = lambdaBatchRequestHandler({
   concurrency: 5,
   responseMiddleware: composeResponseMiddleware(
     slowResponseMiddleware,
-    createThrowNotFoundMiddleware<ApiRouteResponse>()
+    createNotFoundResponseMiddleware()
   )
 });
 

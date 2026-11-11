@@ -30,6 +30,7 @@ describe('apiV0Index', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       authProvider: stubAuthProvider()
@@ -37,11 +38,12 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"}}",
+  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
       "accountsBase": "https://dev.openstax.org/accounts",
+      "ramBase": "https://dev.ram.sandbox.openstax.org",
       "releaseId": "code-version-goes-here",
       "roleApplication": "test",
     },
@@ -66,6 +68,7 @@ describe('apiV0Index', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       authProvider: stubAuthProvider({name: 'test user'} as User)
@@ -74,11 +77,12 @@ describe('apiV0Index', () => {
     const response = await apiV0Index.handler(undefined, requestServices);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"}}",
+  "body": "{"code":"code-version-goes-here","config":{"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"}}",
   "data": {
     "code": "code-version-goes-here",
     "config": {
       "accountsBase": "https://dev.openstax.org/accounts",
+      "ramBase": "https://dev.ram.sandbox.openstax.org",
       "releaseId": "code-version-goes-here",
       "roleApplication": "test",
     },
@@ -104,6 +108,7 @@ describe('buildIndex', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -120,11 +125,11 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
-      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false,"researchAgreementActive":false};</script>
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "data": "<html><head>
-      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false,"researchAgreementActive":false};</script>
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
     "content-type": "text/html",
@@ -148,6 +153,7 @@ describe('buildIndex', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -164,12 +170,12 @@ describe('buildIndex', () => {
 {
   "body": "<html><head>
       <script>window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};</script>
-      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false,"researchAgreementActive":false};</script>
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "data": "<html><head>
       <script>window._OX_USER_DATA = {"consentPreferences":{"accepted":["test"],"rejected":["nothing"]},"uuid":"5c9f7915-4abb-499b-805d-de29cdf67e2d"};</script>
-      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false,"researchAgreementActive":false};</script>
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
     "content-type": "text/html",
@@ -190,6 +196,7 @@ describe('buildIndex', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -205,11 +212,11 @@ describe('buildIndex', () => {
     expect(response).toMatchInlineSnapshot(`
 {
   "body": "<html><head>
-      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false,"researchAgreementActive":false};</script>
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
   "data": "<html><head>
-      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false,"researchAgreementActive":false};</script>
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body class="os-subcontent"><!-- Static body stuff --></body></html>",
   "headers": {
     "cache-control": "no-cache",
     "content-type": "text/html",
@@ -229,6 +236,7 @@ describe('buildFrontendIndexBody', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -239,11 +247,13 @@ describe('buildFrontendIndexBody', () => {
         )
       } as unknown as FileServerAdapter,
       request,
-    }, {global: '_OX_SESSION_CONFIG', value: {disableAnalytics: false}});
+    }, {global: '_OX_SESSION_CONFIG', value: {
+      disableAnalytics: false, researchAgreementActive: false, organizationId: undefined,
+    }});
     expect(response).toMatchInlineSnapshot(`
 "<html><head>
-      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
-      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body>Down for maintenance<!-- Static body stuff --></body></html>"
+      <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false,"researchAgreementActive":false};</script>
+      <script>window._OX_FRONTEND_CONFIG = {"roleApplication":"test","accountsBase":"https://dev.openstax.org/accounts","ramBase":"https://dev.ram.sandbox.openstax.org","releaseId":"code-version-goes-here"};</script><!-- Static head stuff --></head><body>Down for maintenance<!-- Static body stuff --></body></html>"
 `);
   });
 });
@@ -257,9 +267,11 @@ describe('apiV0SessionConfig', () => {
     } as any);
     expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"disableAnalytics":false}",
+  "body": "{"disableAnalytics":false,"researchAgreementActive":false}",
   "data": {
     "disableAnalytics": false,
+    "organizationId": undefined,
+    "researchAgreementActive": false,
   },
   "headers": {
     "content-type": "application/json",

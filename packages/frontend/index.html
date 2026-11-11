@@ -19,6 +19,8 @@
       party once it knows the session. That includes CookieYes, and the banner
       reconciliation that used to live here - GTM reads the consent preferences off
       window._OX_USER_DATA, which the buildIndex route writes above this script.
+      The one exception is event capture, which src/index.tsx loads directly when
+      analytics are disabled but the school has a research agreement.
     -->
     <script>
       window.dataLayer = window.dataLayer || [];

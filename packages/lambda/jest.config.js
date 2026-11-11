@@ -26,6 +26,5 @@ module.exports = {
       lines: 96,
       statements: 97,
     }
-  },
-  resolver: './jest.resolver.js'
+  }
 };
