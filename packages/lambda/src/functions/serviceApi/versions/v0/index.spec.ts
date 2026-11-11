@@ -30,6 +30,7 @@ describe('apiV0Index', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       authProvider: stubAuthProvider()
@@ -66,6 +67,7 @@ describe('apiV0Index', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       authProvider: stubAuthProvider({name: 'test user'} as User)
@@ -104,6 +106,7 @@ describe('buildIndex', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -148,6 +151,7 @@ describe('buildIndex', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -190,6 +194,7 @@ describe('buildIndex', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -229,6 +234,7 @@ describe('buildFrontendIndexBody', () => {
         frontendConfig: {
           roleApplication: 'test',
           accountsBase: 'https://dev.openstax.org/accounts',
+          ramBase: 'https://dev.ram.sandbox.openstax.org',
         },
       },
       frontendFileServer: {
@@ -239,7 +245,9 @@ describe('buildFrontendIndexBody', () => {
         )
       } as unknown as FileServerAdapter,
       request,
-    }, {global: '_OX_SESSION_CONFIG', value: {disableAnalytics: false}});
+    }, {global: '_OX_SESSION_CONFIG', value: {
+      disableAnalytics: false, researchAgreementActive: false, organizationId: undefined,
+    }});
     expect(response).toMatchInlineSnapshot(`
 "<html><head>
       <script>window._OX_SESSION_CONFIG = {"disableAnalytics":false};</script>
